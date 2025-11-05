@@ -857,6 +857,30 @@ def match_candidate():
         return jsonify({'error': str(e)}), 500
 
 
+
+def extract_text_from_pdf(pdf_file):
+    """Extract text content from PDF file"""
+    try:
+        from PyPDF2 import PdfReader
+        import io
+        
+        # Read PDF from file object
+        pdf_bytes = pdf_file.read()
+        pdf_stream = io.BytesIO(pdf_bytes)
+        
+        reader = PdfReader(pdf_stream)
+        text = ""
+        
+        for page in reader.pages:
+            text += page.extract_text() + "\n"
+        
+        return text.strip()
+        
+    except Exception as e:
+        print(f"Error extracting PDF text: {str(e)}")
+        return None
+
+
 def generate_matching_analysis_from_traits(candidate_text, job_requirements):
     """Use GPT to analyze candidate-job fit based on specific trait requirements"""
     
