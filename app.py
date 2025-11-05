@@ -878,7 +878,7 @@ def extract_text_from_pdf(pdf_file):
 def generate_matching_analysis_from_traits(candidate_text, job_requirements, assessed_traits):
     """Use GPT to analyze candidate-job fit based on specific trait requirements"""
     
-    # Build requirements summary
+    # Build requirements summary with better formatting
     requirements_summary = "REQUIRED TRAIT PROFILE FOR THE ROLE:\n"
     requirements_summary += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
     
@@ -894,214 +894,327 @@ def generate_matching_analysis_from_traits(candidate_text, job_requirements, ass
         
         if is_assessed:
             directly_assessed.append(trait_name)
-            requirements_summary += f"**{trait_name}** (Required Level: {level}) ✓ DIRECTLY ASSESSED\n"
+            requirements_summary += f"✓ **{trait_name}** (Required: {level}) — DIRECTLY ASSESSED\n"
         else:
             not_assessed.append(trait_name)
-            requirements_summary += f"**{trait_name}** (Required Level: {level}) ⚠ NOT DIRECTLY ASSESSED\n"
+            requirements_summary += f"⚠ **{trait_name}** (Required: {level}) — NOT ASSESSED (inference only)\n"
         
-        requirements_summary += f"   Description: {description}\n\n"
+        requirements_summary += f"   Purpose: {description}\n\n"
     
-    # Build comprehensive prompt
-# Build comprehensive prompt
-    prompt = f"""You are an expert HR analyst and organizational psychologist. Your task is to analyze how well a candidate's personality assessment matches specific trait requirements for a job role.
+    # Build comprehensive prompt with improvements
+    prompt = f"""You are an expert HR analyst and organizational psychologist specializing in personality-based job fit analysis.
 
 CANDIDATE'S PERSONALITY ASSESSMENT REPORT:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-{candidate_text[:8000]}  
+{candidate_text[:10000]}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 {requirements_summary}
 
-CRITICAL CONTEXT:
-- The candidate was DIRECTLY ASSESSED on: {', '.join(directly_assessed) if directly_assessed else 'NONE OF THE REQUIRED TRAITS'}
-- The candidate was NOT assessed on: {', '.join(not_assessed) if not_assessed else 'ALL TRAITS WERE ASSESSED'}
+ASSESSMENT COVERAGE:
+✓ DIRECTLY ASSESSED ({len(directly_assessed)} traits): {', '.join(directly_assessed) if directly_assessed else 'NONE'}
+⚠ NOT ASSESSED ({len(not_assessed)} traits): {', '.join(not_assessed) if not_assessed else 'NONE'}
 
-ABSOLUTELY CRITICAL RULES FOR NON-ASSESSED TRAITS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ANALYSIS INSTRUCTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. NEVER frame lack of assessment as a weakness, concern, or red flag
-2. NEVER say things like:
-   - absence of assessment raises concerns
-   - lack of data suggests deficiency
-   - inability to confirm this trait is problematic
-   - missing assessment indicates risk
+CRITICAL RULES FOR NON-ASSESSED TRAITS:
 
-3. INSTEAD, use neutral, exploratory language:
-   - This trait was not directly assessed. Based on [other trait], they may demonstrate [trait] through [specific approach]. Direct assessment would be needed to confirm.
-   - While not directly measured, their [assessed behavior] suggests potential for [trait], though this remains to be validated.
-   - Cannot be conclusively determined from available data. Recommend supplementary assessment if this trait is critical.
+1. DEFAULT TO NEUTRAL: Score = 3 for all non-assessed traits unless strong positive evidence exists
+2. NEVER frame absence as negative: Do not use words like "concern", "risk", "deficiency", "gap", or "weakness" for non-assessed traits
+3. USE CONDITIONAL LANGUAGE: "may", "could potentially", "suggests possibility of", "would require validation"
+4. CITE SPECIFIC EVIDENCE: When inferring, always reference specific assessed traits and behaviors
+5. RECOMMEND FURTHER ASSESSMENT: Explicitly state that validation is needed
 
-4. For non-assessed traits, DEFAULT TO NEUTRAL (score: 3) unless there is STRONG positive evidence from assessed traits that clearly suggests higher capability
+SCORING SCALE (1-5):
+• 5 = Exceptional match: Clear evidence of exceeding requirements significantly
+• 4 = Strong match: Solid evidence of meeting and often exceeding requirements  
+• 3 = Adequate/Neutral: Meets basic requirements OR insufficient data to judge
+• 2 = Below requirements: Clear evidence of deficiency in assessed trait
+• 1 = Poor match: Strong evidence of opposite tendency in assessed trait
 
-5. Make your hiring recommendation based PRIMARILY on directly assessed traits. Non-assessed traits should be noted as "requiring further evaluation" rather than counted against the candidate
+SCORING RULES:
+• Directly assessed traits: Score 1-5 based on actual evidence
+• Non-assessed traits: Default to 3 unless strong positive inference justifies 4
+• NEVER score non-assessed traits below 3
+• Weight directly assessed traits at 85%, non-assessed at 15%
 
-ANALYSIS TASK:
+ANALYSIS STRUCTURE:
 
-SECTION 1: DIRECTLY ASSESSED TRAITS {len(directly_assessed)} traits)
-For each directly assessed trait, provide detailed analysis with specific evidence from the report.
+For DIRECTLY ASSESSED traits, provide:
+1. Specific behavioral evidence from the report (quote or paraphrase)
+2. How this evidence relates to job requirements
+3. Score justification with concrete examples
+4. Any nuances or contextual factors
 
-SECTION 2: NON-ASSESSED TRAITS ({len(not_assessed)} traits) 
-For traits that were NOT assessed, use this format:
-- Score: Default to 3 (neutral) unless strong positive evidence suggests otherwise
-- Analysis: NOT DIRECTLY ASSESSED. Based on their [specific assessed trait showing specific behavior], they may approach [non-assessed trait] by [neutral interpretation]. However, this trait was not directly measured and would require specific assessment to evaluate accurately.
-- Secondary Inference: Explain what indirect evidence you are using, WITHOUT framing absence as negative
+For NON-ASSESSED traits, provide:
+1. Clear statement: "NOT DIRECTLY ASSESSED"
+2. Inference basis: "Based on [specific assessed trait], which showed [specific behavior]..."
+3. Tentative interpretation: "This suggests the candidate may approach [trait] by..."
+4. Validation needed: "Direct assessment required to confirm this trait"
+5. Score: Default to 3, or 4 if strong positive evidence
+6. Secondary inference: Explain the logical connection
 
-SCORING SCALE (1-5 Likert):
-1 = Clear evidence of OPPOSITE tendency (use ONLY for directly assessed traits with clear negative evidence)
-2 = Below requirements (use ONLY for directly assessed traits with clear evidence)
-3 = NEUTRAL/UNKNOWN (DEFAULT for ALL non-assessed traits unless strong positive evidence)
-4 = Exceeds requirements (requires clear direct evidence)
-5 = Exceptional match (requires very clear direct evidence)
+OVERALL FIT CALCULATION:
+• Calculate weighted average: (directly_assessed_avg × 0.85) + (non_assessed_avg × 0.15)
+• Round to nearest 0.5
+• Non-assessed traits should not significantly impact overall score
 
-ANALYSIS SECTIONS REQUIRED:
+HIRING RECOMMENDATION FRAMEWORK:
+• STRONG HIRE: Overall ≥4.0, all critical directly assessed traits ≥4
+• HIRE: Overall ≥3.5, most critical directly assessed traits ≥3
+• CONDITIONAL: Overall 3.0-3.4, recommend assessing non-assessed traits before decision
+• NOT RECOMMENDED: Overall <3.0 OR critical directly assessed traits <3
+• If critical traits are non-assessed, always recommend CONDITIONAL with supplementary assessment
 
-1. TRAIT-BY-TRAIT ANALYSIS - For EACH required trait:
-   - Fit score (1-5)
-   - Whether directly assessed (true/false)
-   - Primary analysis (evidence-based for assessed; neutral inference for non-assessed)
-   - If NOT assessed: secondary_inference explaining indirect indicators WITHOUT negative framing
+OUTPUT STRUCTURE:
 
-2. OVERALL FIT SCORE (1-5): 
-   - Base this PRIMARILY on directly assessed traits
-   - Weight directly assessed traits at 80%, non-assessed at 20%
-   - Non-assessed traits should NOT lower the score unless there is positive evidence they could raise it
+Provide complete JSON with these sections:
 
-3. ASSESSMENT COVERAGE: Clearly state {len(directly_assessed)} of {len(job_requirements)} required traits were directly assessed. The remaining {len(not_assessed)} traits are inferred and should not be weighted heavily in hiring decisions without supplementary assessment.
+1. TRAIT_SCORES: For each of {len(job_requirements)} required traits, include:
+   - score (1-5)
+   - required_level
+   - directly_assessed (boolean)
+   - analysis (3-5 sentences with specific evidence)
+   - secondary_inference (for non-assessed: 2-3 sentences explaining inference logic)
+   - confidence_level (for non-assessed: "low" or "medium"; for assessed: "high")
 
-4. HIRING RECOMMENDATION: 
-   - Focus on directly assessed traits
-   - For non-assessed critical traits, state: "Recommend supplementary assessment of [traits] before final decision" rather than counting absence as negative
-   - DO NOT penalize candidate for traits they were not asked about
+2. OVERALL_FIT_SCORE: Weighted average (1-5, increments of 0.5)
 
-5. KEY STRENGTHS: Focus on directly assessed positive traits
+3. OVERALL_FIT_LABEL: Poor Fit | Below Average | Adequate | Good Fit | Excellent Fit
 
-6. POTENTIAL CONCERNS: Only list concerns from DIRECTLY ASSESSED traits. For non-assessed traits, use "Areas requiring further evaluation" instead of "concerns"
+4. KEY_STRENGTHS: 4-6 bullet points focusing on directly assessed positive traits with evidence
 
-7. RISK ASSESSMENT: Frame non-assessed traits as "incomplete data requiring further evaluation" NOT as risks or red flags
+5. POTENTIAL_CONCERNS: 2-4 bullet points from ONLY directly assessed traits showing weakness
 
-8. EXECUTIVE SUMMARY: Lead with directly assessed traits. Mention non-assessed traits as "requiring supplementary evaluation" not as weaknesses.
+6. AREAS_REQUIRING_EVALUATION: List all non-assessed traits with brief reason why assessment is needed
 
-REMEMBER: A candidate cannot be penalized for traits they were never asked about. Absence of data does not equal absence of capability.
+7. DEVELOPMENT_NEEDS: 3-5 actionable development areas based on assessed behaviors
 
-Format as JSON:
+8. SPECIFIC_EVIDENCE: 5-8 direct quotes or specific behavioral examples from the report
+
+9. ASSESSMENT_COVERAGE: 2-3 sentence paragraph explaining what was/wasn't assessed and implications
+
+10. RISK_ASSESSMENT: 2-3 paragraphs discussing:
+    - Risks based on assessed traits
+    - Data gaps from non-assessed traits (framed neutrally)
+    - Recommendations for mitigating uncertainty
+
+11. HIRING_RECOMMENDATION: Clear decision (Strong Hire | Hire | Conditional | Not Recommended) with:
+    - Primary rationale based on assessed traits
+    - Secondary considerations from non-assessed traits
+    - Specific conditions or next steps if applicable
+
+12. ONBOARDING_RECOMMENDATIONS: 4-6 specific actions based on assessed trait patterns
+
+13. EXECUTIVE_SUMMARY: 3-4 paragraphs covering:
+    - Overview of directly assessed strengths and fit
+    - Key findings from trait analysis
+    - Treatment of non-assessed traits (neutral framing)
+    - Clear recommendation with rationale
+
+REMEMBER:
+• Absence of data ≠ absence of capability
+• Be specific: Use exact quotes and behavioral examples
+• Be fair: Don't penalize for missing data
+• Be precise: Score accurately based on evidence quality
+• Be actionable: Provide concrete recommendations
+
+Format as valid JSON (no markdown):
 {{
-  "overall_fit_score": <1-5>,
-  "overall_fit_label": <Poor Fit|Below Average|Adequate|Good Fit|Excellent Fit>,
+  "overall_fit_score": 3.5,
+  "overall_fit_label": "Good Fit",
   "trait_scores": {{
-    "<trait_name>": {{
-      "score": <1-5>,
-      "required_level": "<low|medium|high>",
-      "directly_assessed": <true|false>,
-      "analysis": "For assessed: evidence-based. For non-assessed: neutral inference without negative framing",
-      "secondary_inference": "If not assessed: neutral explanation of indirect evidence"
+    "trait_name": {{
+      "score": 4,
+      "required_level": "high",
+      "directly_assessed": true,
+      "analysis": "Detailed analysis with specific evidence...",
+      "secondary_inference": "Only for non-assessed traits...",
+      "confidence_level": "high"
     }}
   }},
-  "key_strengths": ["Focus on directly assessed positive traits"],
-  "potential_concerns": ["Only from directly assessed traits"],
-  "areas_requiring_evaluation": ["List non-assessed traits here, NOT in concerns"],
-  "development_needs": ["Based on actual assessed behaviors"],
-  "specific_evidence": ["Quote directly assessed behaviors only"],
-  "assessment_coverage": "X of Y traits directly assessed. Remaining traits are inferred and require supplementary evaluation for conclusive assessment.",
-  "risk_assessment": "Frame non-assessed traits as data gaps, not risks",
-  "hiring_recommendation": "Base on directly assessed traits. Note non-assessed traits need evaluation, not that they are concerns",
-  "onboarding_recommendations": ["Based on assessed traits"],
-  "executive_summary": "Lead with assessed traits, note non-assessed neutrally"
+  "key_strengths": ["strength 1", "strength 2"],
+  "potential_concerns": ["concern 1"],
+  "areas_requiring_evaluation": ["trait 1: reason", "trait 2: reason"],
+  "development_needs": ["need 1", "need 2"],
+  "specific_evidence": ["quote 1", "quote 2"],
+  "assessment_coverage": "Explanation of coverage...",
+  "risk_assessment": "Multi-paragraph assessment...",
+  "hiring_recommendation": "Clear recommendation with rationale...",
+  "onboarding_recommendations": ["rec 1", "rec 2"],
+  "executive_summary": "Multi-paragraph summary..."
 }}
 
 Required traits to analyze: {', '.join(job_requirements.keys())}"""
 
-    print("\nGPT PROMPT FOR JOB MATCHING (WITH ASSESSMENT AWARENESS):")
-    print("-"*80)
-    print(prompt[:800] + "..." if len(prompt) > 800 else prompt)
-    print("-"*80 + "\n")
+    print("\n" + "="*80)
+    print("GPT PROMPT FOR JOB MATCHING ANALYSIS")
+    print("="*80)
+    print(f"Prompt length: {len(prompt)} characters")
+    print(f"Directly assessed: {len(directly_assessed)} traits")
+    print(f"Non-assessed: {len(not_assessed)} traits")
+    print("="*80 + "\n")
     
     try:
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are an expert HR analyst. Distinguish clearly between directly assessed traits and inferred traits. Be transparent about assessment gaps. Use specific evidence from the report. Respond only with valid JSON."},
+                {
+                    "role": "system", 
+                    "content": """You are an expert HR analyst specializing in personality-based job fit analysis.
+
+CORE PRINCIPLES:
+1. Evidence-based: Use specific quotes and behavioral examples
+2. Fair assessment: Never penalize candidates for missing data
+3. Transparent: Clearly distinguish assessed vs inferred traits
+4. Actionable: Provide concrete, specific recommendations
+5. Precise scoring: Base scores strictly on evidence quality
+
+CRITICAL RULES:
+• For assessed traits: Use actual evidence, score 1-5 appropriately
+• For non-assessed traits: Default to score 3, use conditional language, cite inference basis
+• Never use negative framing for non-assessed traits
+• Always respond with valid JSON only (no markdown, no additional text)"""
+                },
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7,
-            max_tokens=4500
+            temperature=0.5,  # Lower temperature for more consistent, precise responses
+            max_tokens=5000,  # Increased for comprehensive analysis
+            response_format={"type": "json_object"}  # Enforce JSON response
         )
         
         content = response.choices[0].message.content or "{}"
         
-        print("GPT RESPONSE FOR JOB MATCHING:")
-        print("-"*80)
-        print(content[:500] + "..." if len(content) > 500 else content)
-        print("-"*80 + "\n")
+        print("\n" + "="*80)
+        print("GPT RESPONSE RECEIVED")
+        print("="*80)
+        print(f"Response length: {len(content)} characters")
+        print(f"Preview: {content[:300]}...")
+        print("="*80 + "\n")
         
-        # Clean up markdown if present
-        if '```json' in content:
-            content = content.split('```json')[1].split('```')[0].strip()
-        elif '```' in content:
-            content = content.split('```')[1].split('```')[0].strip()
-        
+        # Parse JSON (should be clean with response_format)
         analysis = json.loads(content)
         
-        # Ensure all required traits have scores and proper structure
+        # Validation and enrichment
         if 'trait_scores' not in analysis:
             analysis['trait_scores'] = {}
         
+        # Ensure all required traits are present and properly structured
         for trait_name, trait_data in job_requirements.items():
+            is_assessed = trait_name in assessed_traits
+            
             if trait_name not in analysis['trait_scores']:
-                is_assessed = trait_name in assessed_traits
+                # Add missing trait with default structure
                 analysis['trait_scores'][trait_name] = {
                     'score': 3,
                     'required_level': trait_data['level'],
                     'directly_assessed': is_assessed,
-                    'analysis': 'Insufficient information to assess this trait.',
-                    'secondary_inference': '' if is_assessed else 'This trait was not directly assessed in the candidate report.'
+                    'confidence_level': 'high' if is_assessed else 'low',
+                    'analysis': 'Insufficient information provided in report.' if is_assessed else 'NOT DIRECTLY ASSESSED. This trait requires supplementary evaluation for accurate assessment.',
+                    'secondary_inference': '' if is_assessed else 'This trait was not included in the candidate assessment. Direct evaluation recommended if critical for role success.'
                 }
             else:
-                # Ensure directly_assessed field exists
-                if 'directly_assessed' not in analysis['trait_scores'][trait_name]:
-                    analysis['trait_scores'][trait_name]['directly_assessed'] = trait_name in assessed_traits
+                # Enrich existing trait with missing fields
+                trait_score = analysis['trait_scores'][trait_name]
                 
-                # Ensure secondary_inference field exists for non-assessed traits
-                if not analysis['trait_scores'][trait_name]['directly_assessed'] and 'secondary_inference' not in analysis['trait_scores'][trait_name]:
-                    analysis['trait_scores'][trait_name]['secondary_inference'] = 'Inferred from other behavioral indicators.'
+                if 'directly_assessed' not in trait_score:
+                    trait_score['directly_assessed'] = is_assessed
+                
+                if 'confidence_level' not in trait_score:
+                    trait_score['confidence_level'] = 'high' if is_assessed else 'low'
+                
+                if 'required_level' not in trait_score:
+                    trait_score['required_level'] = trait_data['level']
+                
+                # Ensure non-assessed traits have secondary_inference
+                if not is_assessed and 'secondary_inference' not in trait_score:
+                    trait_score['secondary_inference'] = 'Inferred from related behavioral patterns. Direct assessment needed for validation.'
+                
+                # Validate scoring rules for non-assessed traits
+                if not is_assessed and trait_score.get('score', 3) < 3:
+                    trait_score['score'] = 3  # Enforce minimum score of 3 for non-assessed
+                    trait_score['analysis'] = f"NOT DIRECTLY ASSESSED (score adjusted to neutral). {trait_score.get('analysis', '')}"
         
-        # Add assessment coverage if missing
+        # Add missing top-level fields
+        if 'areas_requiring_evaluation' not in analysis:
+            analysis['areas_requiring_evaluation'] = [
+                f"{trait}: Not directly assessed, requires validation" 
+                for trait in not_assessed
+            ]
+        
         if 'assessment_coverage' not in analysis:
-            analysis['assessment_coverage'] = f"The candidate was directly assessed on {len(directly_assessed)} of the {len(job_requirements)} required traits. Remaining traits were inferred from related behavioral patterns."
+            coverage_pct = (len(directly_assessed) / len(job_requirements) * 100) if job_requirements else 0
+            analysis['assessment_coverage'] = (
+                f"Assessment Coverage: {len(directly_assessed)}/{len(job_requirements)} required traits "
+                f"({coverage_pct:.0f}%) were directly assessed. The remaining {len(not_assessed)} trait(s) "
+                f"are inferred from related behaviors and should not be weighted heavily in final decisions "
+                f"without supplementary evaluation."
+            )
+        
+        # Add metadata for tracking
+        analysis['_metadata'] = {
+            'total_traits_required': len(job_requirements),
+            'directly_assessed_count': len(directly_assessed),
+            'non_assessed_count': len(not_assessed),
+            'assessment_coverage_percentage': (len(directly_assessed) / len(job_requirements) * 100) if job_requirements else 0
+        }
         
         return analysis
+        
+    except json.JSONDecodeError as e:
+        print(f"JSON Parsing Error: {str(e)}")
+        print(f"Content received: {content[:500]}")
+        import traceback
+        traceback.print_exc()
+        return _generate_fallback_response(job_requirements, assessed_traits, directly_assessed, not_assessed)
         
     except Exception as e:
         print(f"GPT Error for job matching: {str(e)}")
         import traceback
         traceback.print_exc()
-        
-        # Fallback response
-        fallback_trait_scores = {}
-        for trait_name, trait_data in job_requirements.items():
-            is_assessed = trait_name in assessed_traits
-            fallback_trait_scores[trait_name] = {
-                'score': 3,
-                'required_level': trait_data['level'],
-                'directly_assessed': is_assessed,
-                'analysis': 'Analysis could not be completed due to a technical error.',
-                'secondary_inference': '' if is_assessed else 'This trait was not directly assessed.'
-            }
-        
-        return {
-            'error': 'Partial analysis - GPT error occurred',
-            'overall_fit_score': 3,
-            'overall_fit_label': 'Unable to fully analyze',
-            'trait_scores': fallback_trait_scores,
-            'key_strengths': ['Analysis incomplete'],
-            'potential_concerns': ['Technical error prevented full analysis'],
-            'development_needs': ['Unable to assess'],
-            'specific_evidence': ['Error occurred during analysis'],
-            'assessment_coverage': f'{len(directly_assessed)} traits were directly assessed, {len(not_assessed)} were not.',
-            'risk_assessment': 'Analysis could not be completed due to a technical error.',
-            'hiring_recommendation': 'Unable to provide recommendation - please retry analysis',
-            'onboarding_recommendations': ['Retry analysis for recommendations'],
-            'executive_summary': 'Analysis could not be completed due to a technical error. Please try again.'
-        }
+        return _generate_fallback_response(job_requirements, assessed_traits, directly_assessed, not_assessed)
 
+
+def _generate_fallback_response(job_requirements, assessed_traits, directly_assessed, not_assessed):
+    """Generate fallback response when GPT analysis fails"""
+    fallback_trait_scores = {}
+    
+    for trait_name, trait_data in job_requirements.items():
+        is_assessed = trait_name in assessed_traits
+        fallback_trait_scores[trait_name] = {
+            'score': 3,
+            'required_level': trait_data['level'],
+            'directly_assessed': is_assessed,
+            'confidence_level': 'high' if is_assessed else 'low',
+            'analysis': 'Analysis could not be completed due to a technical error. Please retry.' if is_assessed else 'NOT DIRECTLY ASSESSED. This trait requires supplementary evaluation.',
+            'secondary_inference': '' if is_assessed else 'This trait was not directly assessed. Cannot provide inference due to technical error.'
+        }
+    
+    return {
+        'error': 'Analysis failed - technical error occurred',
+        'overall_fit_score': 3.0,
+        'overall_fit_label': 'Unable to analyze',
+        'trait_scores': fallback_trait_scores,
+        'key_strengths': ['Analysis incomplete due to technical error'],
+        'potential_concerns': ['Technical error prevented analysis completion'],
+        'areas_requiring_evaluation': [f"{trait}: Not assessed, requires evaluation" for trait in not_assessed],
+        'development_needs': ['Unable to assess - retry analysis needed'],
+        'specific_evidence': ['Error occurred during analysis - no evidence available'],
+        'assessment_coverage': f'{len(directly_assessed)} of {len(job_requirements)} traits directly assessed. {len(not_assessed)} traits not assessed.',
+        'risk_assessment': 'Analysis could not be completed due to a technical error. Please retry the analysis to generate a comprehensive assessment.',
+        'hiring_recommendation': 'Unable to provide recommendation - technical error occurred. Please retry analysis.',
+        'onboarding_recommendations': ['Retry analysis to generate recommendations'],
+        'executive_summary': 'Analysis could not be completed due to a technical error. Please retry to generate a comprehensive candidate evaluation.',
+        '_metadata': {
+            'total_traits_required': len(job_requirements),
+            'directly_assessed_count': len(directly_assessed),
+            'non_assessed_count': len(not_assessed),
+            'assessment_coverage_percentage': (len(directly_assessed) / len(job_requirements) * 100) if job_requirements else 0,
+            'error': True
+        }
+    }
 
 @app.route('/api/match-candidate', methods=['POST'])
 def match_candidate():
