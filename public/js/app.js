@@ -23,7 +23,7 @@ function renderTraitSelection() {
     }
     
     card.innerHTML = `
-      <input type="checkbox" value="${trait}" ${selectedTraits.length === 0 || selectedTraits.includes(trait) ? 'checked' : ''} data-testid="checkbox-trait-${trait.toLowerCase().replace(/[^a-z0-9]/g, '-')}">
+      <input type="checkbox" value="${trait}" ${selectedTraits.includes(trait) ? 'checked' : ''} data-testid="checkbox-trait-${trait.toLowerCase().replace(/[^a-z0-9]/g, '-')}">
       <div class="trait-info">
         <div class="trait-name">${traitInfo.name}</div>
         <div class="trait-meta">
