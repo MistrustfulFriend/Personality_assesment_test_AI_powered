@@ -1038,6 +1038,162 @@ Include a trait_scores entry for EVERY required trait: {', '.join(job_requiremen
             'executive_summary': 'Analysis could not be completed due to a technical error. Please try again.'
         }
 
+#!/usr/bin/env python3
+# ADD THIS NEW ROUTE TO YOUR app.py FILE (after the existing /api/download route)
+
+@app.route('/api/download-match-report', methods=['POST'])
+def download_match_report():
+    """Generate PDF report for candidate-job matching analysis"""
+    try:
+        data = request.json or {}
+        matching_analysis = data.get('matchingAnalysis', {})
+        job_requirements = data.get('jobRequirements', {})
+        candidate_name = data.get('candidateName', 'Candidate')
+        job_title = data.get('jobTitle', 'Position')
+        
+        # Create PDF in memory
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.75*inch, bottomMargin=0.75*inch)
+        story = []
+        
+        # Styles
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor='#5a9f8a',
+            spaceAfter=12,
+            alignment=TA_CENTER
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=16,
+            textColor='#4a8f7a',
+            spaceAfter=10,
+            spaceBefore=15
+        )
+        
+        subheading_style = ParagraphStyle(
+            'CustomSubheading',
+            parent=styles['Heading3'],
+            fontSize=13,
+            textColor='#3a7f6a',
+            spaceAfter=8,
+            spaceBefore=10
+        )
+        
+        body_style = ParagraphStyle(
+            'CustomBody',
+            parent=styles['Normal'],
+            fontSize=10,
+            spaceAfter=6,
+            leading=14
+        )
+        
+        # Title Page
+        story.append(Paragraph("Candidate-Job Matching Report", title_style))
+        story.append(Paragraph(f"Candidate: {candidate_name}", styles['Normal']))
+        story.append(Paragraph(f"Position: {job_title}", styles['Normal']))
+        story.append(Paragraph(f"Generated: {datetime.now().strftime('%B %d, %Y')}", styles['Normal']))
+        story.append(Spacer(1, 0.5*inch))
+        
+        # Overall Fit Score
+        overall_fit = matching_analysis.get('overall_fit_score', 3)
+        fit_label = matching_analysis.get('overall_fit_label', 'Adequate Fit')
+        
+        story.append(Paragraph("Overall Candidate Fit", heading_style))
+        story.append(Paragraph(f"<b>Fit Score:</b> {overall_fit:.1f}/5.0 - {fit_label}", body_style))
+        story.append(Spacer(1, 0.2*inch))
+        
+        # Hiring Recommendation
+        story.append(Paragraph("Hiring Recommendation", heading_style))
+        story.append(Paragraph(matching_analysis.get('hiring_recommendation', 'No recommendation available'), body_style))
+        story.append(Spacer(1, 0.2*inch))
+        
+        # Executive Summary
+        story.append(Paragraph("Executive Summary", heading_style))
+        exec_summary = matching_analysis.get('executive_summary', 'No summary available')
+        for para in exec_summary.split('\n\n'):
+            if para.strip():
+                story.append(Paragraph(para.strip(), body_style))
+        story.append(Spacer(1, 0.2*inch))
+        
+        # Trait-by-Trait Analysis
+        story.append(PageBreak())
+        story.append(Paragraph("Trait-by-Trait Fit Analysis", heading_style))
+        
+        trait_scores = matching_analysis.get('trait_scores', {})
+        for trait_name, trait_data in trait_scores.items():
+            score = trait_data.get('score', 3)
+            required_level = trait_data.get('required_level', 'N/A')
+            analysis = trait_data.get('analysis', '')
+            
+            story.append(Paragraph(f"<b>{trait_name}</b>", subheading_style))
+            story.append(Paragraph(f"Score: {score:.1f}/5.0 | Required Level: {required_level.upper()}", body_style))
+            story.append(Paragraph(analysis, body_style))
+            story.append(Spacer(1, 0.15*inch))
+        
+        # Key Strengths
+        story.append(PageBreak())
+        story.append(Paragraph("Key Strengths", heading_style))
+        strengths = matching_analysis.get('key_strengths', [])
+        for strength in strengths:
+            story.append(Paragraph(f"• {strength}", body_style))
+        story.append(Spacer(1, 0.2*inch))
+        
+        # Potential Concerns
+        story.append(Paragraph("Potential Concerns", heading_style))
+        concerns = matching_analysis.get('potential_concerns', [])
+        for concern in concerns:
+            story.append(Paragraph(f"• {concern}", body_style))
+        story.append(Spacer(1, 0.2*inch))
+        
+        # Specific Evidence
+        story.append(Paragraph("Specific Evidence from Report", heading_style))
+        evidence = matching_analysis.get('specific_evidence', [])
+        for item in evidence:
+            story.append(Paragraph(f"• {item}", body_style))
+        story.append(Spacer(1, 0.2*inch))
+        
+        # Risk Assessment
+        story.append(PageBreak())
+        story.append(Paragraph("Risk Assessment", heading_style))
+        risk = matching_analysis.get('risk_assessment', 'No risk assessment available')
+        for para in risk.split('\n\n'):
+            if para.strip():
+                story.append(Paragraph(para.strip(), body_style))
+        story.append(Spacer(1, 0.2*inch))
+        
+        # Development Needs
+        story.append(Paragraph("Development Needs", heading_style))
+        dev_needs = matching_analysis.get('development_needs', [])
+        for need in dev_needs:
+            story.append(Paragraph(f"• {need}", body_style))
+        story.append(Spacer(1, 0.2*inch))
+        
+        # Onboarding Recommendations
+        story.append(Paragraph("Onboarding Recommendations", heading_style))
+        onboarding = matching_analysis.get('onboarding_recommendations', [])
+        for rec in onboarding:
+            story.append(Paragraph(f"• {rec}", body_style))
+        
+        # Build PDF
+        doc.build(story)
+        buffer.seek(0)
+        
+        return send_file(
+            buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'candidate-job-match-{datetime.now().strftime("%Y-%m-%d")}.pdf'
+        )
+        
+    except Exception as e:
+        print(f"Error generating match report PDF: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
