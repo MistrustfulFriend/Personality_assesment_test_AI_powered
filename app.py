@@ -69,15 +69,17 @@ def analyze():
             base = sum(scenario_values) / len(scenario_values)
             count_0 = sum(1 for v in scenario_values if v == 0)
             count_2 = sum(1 for v in scenario_values if v == 2)
-            maj_frac = max(count_0, count_2) / len(scenario_values)
             
+            # Consistency: fraction of responses matching the most common response
+            max_count = max(count_0, count_2)
+            consistency = max_count / len(scenario_values)
+            
+            # Agreement: alignment with self-rating
             delta = abs(base - verification_value)
             agreement = 1 - delta / 2.0
             
-            variance = sum((v - base) ** 2 for v in scenario_values) / len(scenario_values)
-            consistency = 1 - variance / 0.889
-            
-            situationality = 1 - maj_frac
+            # Situationality: same as consistency (with only 2 choices)
+            situationality = consistency
             
             pattern = '-'.join(['A' if v == 0 else 'B' for v in scenario_values])
             
@@ -87,15 +89,19 @@ def analyze():
                 'agreement': agreement,
                 'situationality': situationality,
                 'pattern': pattern,
-                'verification': verification_value
+                'verification': verification_value,
+                'scenario_count': len(scenario_values),
+                'consistency_count': max_count,
+                'agreement_delta': delta,
+                'response_distribution': {'0': count_0, '2': count_2}
             }
             
             print(f"\n{trait}:")
             print(f"  Score: {base:.2f}")
             print(f"  Pattern: {pattern}")
-            print(f"  Consistency: {consistency:.2f}")
+            print(f"  Consistency: {max_count}/{len(scenario_values)}")
             print(f"  Self-Awareness: {agreement:.2f}")
-            print(f"  Adaptability: {situationality:.2f}")
+            print(f"  Adaptability: {max_count}/{len(scenario_values)}")
         
         print("-"*80 + "\n")
         
@@ -149,7 +155,7 @@ Interpretation: Low end = {interp['lowEnd']}, High end = {interp['highEnd']}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Pattern: {result['pattern']} - {pattern_info.get('label', '')}
-Metrics: Consistency={result['consistency']:.2f} | Self-Awareness={result['agreement']:.2f} | Adaptability={result['situationality']:.2f}
+Metrics: Consistency={result['consistency_count']}/{result['scenario_count']} | Self-Awareness={result['agreement']:.2f} | Adaptability={result['consistency_count']}/{result['scenario_count']}
 
 SCENARIO QUESTIONS & RESPONDENT'S CHOICES:
 """
@@ -246,7 +252,7 @@ Format as JSON with keys: {{"personality_type_title": "title", "profile_summary"
             'personality_type_title': 'Multifaceted Professional',
             'profile_summary': f'Your assessment covered {len(selected_traits)} personality dimensions, revealing distinct behavioral patterns.',
             'decision_style': 'Your responses demonstrate a characteristic approach to professional decision-making.',
-            'awareness_adaptability': f'Your self-awareness level is at {int(avg_agreement*100)}% and adaptability at {int(avg_situationality*100)}%.',
+            'awareness_adaptability': f'Your self-awareness level is high and you show strong adaptability.',
             'patterns_themes': 'Multiple behavioral patterns emerge from your responses.',
             'professional_implications': 'These traits have specific implications for your professional effectiveness.',
             'development_insights': 'Consider focusing on areas where your scores show opportunities for growth.'
@@ -283,9 +289,9 @@ Pattern Logic: {pattern_info.get('logic', '')}
 
 METRICS:
 - Score: {result['score']:.2f} (0=low end, 2=high end)
-- Consistency: {result['consistency']:.2f}
+- Consistency: {result['consistency_count']}/{result['scenario_count']}
 - Self-Awareness (Agreement): {result['agreement']:.2f}
-- Adaptability (Situationality): {result['situationality']:.2f}
+- Adaptability: {result['consistency_count']}/{result['scenario_count']}
 - Self-rating: {result['verification']}
 
 ACTUAL SCENARIOS & RESPONDENT'S CHOICES:
@@ -374,8 +380,8 @@ Format as JSON: {{"behavioral_profile": "text", "self_awareness": "text", "adapt
             # Use fallback text
             fallback_analysis = {
                 'behavioral_profile': f'Based on your responses, you show a tendency toward {interp["lowEnd"] if result["score"] < 1.0 else interp["highEnd"]}.',
-                'self_awareness': f'Your self-perception alignment is {int(result["agreement"]*100)}%.',
-                'adaptability': f'You demonstrate {int(result["situationality"]*100)}% adaptability across contexts.',
+                'self_awareness': f'Your self-perception alignment shows room for development.',
+                'adaptability': f'You demonstrate contextual flexibility in your responses.',
                 'pattern_summary': pattern_info.get('label', 'Pattern analysis unavailable')
             }
             trait_analyses[trait] = fallback_analysis
@@ -396,10 +402,16 @@ def get_trait_orientation(score):
     else:
         return ("Moderate", "moderate")
 
+def format_fraction(numerator, denominator):
+    """Format as fraction without percentage"""
+    return f"{numerator}/{denominator}"
+
 def generate_html_structure(selected_traits, results, answers, trait_data, overall_assessment):
     """Generate the complete HTML structure with placeholders for GPT content"""
     
     # Calculate aggregate metrics
+    total_scenarios = sum(results[t]['scenario_count'] for t in selected_traits)
+    total_consistent = sum(results[t]['consistency_count'] for t in selected_traits)
     avg_consistency = sum(results[t]['consistency'] for t in selected_traits) / len(selected_traits)
     avg_agreement = sum(results[t]['agreement'] for t in selected_traits) / len(selected_traits)
     avg_situationality = sum(results[t]['situationality'] for t in selected_traits) / len(selected_traits)
@@ -416,9 +428,9 @@ def generate_html_structure(selected_traits, results, answers, trait_data, overa
     html += '<th class="has-tooltip">Orientation<span class="tooltip">Your tendency on this trait: Low (0-0.6), Moderate (0.7-1.3), or High (1.4-2.0)</span></th>'
     html += '<th class="has-tooltip">Score<span class="tooltip">Average of your scenario-based responses (0-2 scale)</span></th>'
     html += '<th class="has-tooltip">Pattern<span class="tooltip">Your response pattern across scenarios: A=Low-end choice, B=High-end choice</span></th>'
-    html += '<th class="has-tooltip">Consistency<span class="tooltip">How similar your responses were across different scenarios (0-100%). High = predictable, Low = context-dependent</span></th>'
-    html += '<th class="has-tooltip">Self-Match<span class="tooltip">Alignment between your self-rating and scenario-based behavior (0-100%). High = good self-awareness</span></th>'
-    html += '<th class="has-tooltip">Adaptability<span class="tooltip">Degree of contextual flexibility (0-100%). High = adapts to situations, Low = consistent approach</span></th>'
+    html += '<th class="has-tooltip">Consistency<span class="tooltip">Number of responses matching your most common answer. Higher = more predictable behavior</span></th>'
+    html += '<th class="has-tooltip">Self-Match<span class="tooltip">How close your self-rating is to your scenario average (0=perfect match, 2=maximum difference)</span></th>'
+    html += '<th class="has-tooltip">Adaptability<span class="tooltip">Same as consistency - shows if you maintain a consistent approach or vary by context</span></th>'
     html += '</tr></thead><tbody>'
     
     for trait in selected_traits:
@@ -428,17 +440,21 @@ def generate_html_structure(selected_traits, results, answers, trait_data, overa
         
         # Determine badge classes
         consistency_class = 'badge-high' if result['consistency'] > 0.7 else ('badge-medium' if result['consistency'] > 0.4 else 'badge-low')
-        agreement_class = 'badge-high' if result['agreement'] > 0.7 else ('badge-medium' if result['agreement'] > 0.4 else 'badge-low')
-        situationality_class = 'badge-high' if result['situationality'] > 0.6 else ('badge-medium' if result['situationality'] > 0.3 else 'badge-low')
+        agreement_class = 'badge-high' if result['agreement_delta'] < 0.5 else ('badge-medium' if result['agreement_delta'] < 1.0 else 'badge-low')
+        situationality_class = 'badge-high' if result['situationality'] > 0.7 else ('badge-medium' if result['situationality'] > 0.4 else 'badge-low')
+        
+        consistency_display = format_fraction(result['consistency_count'], result['scenario_count'])
+        agreement_display = f"Δ {result['agreement_delta']:.1f}"
+        situationality_display = format_fraction(result['consistency_count'], result['scenario_count'])
         
         html += '<tr>'
         html += f'<td class="trait-name-cell"><strong>{interp["name"]}</strong><br><span class="trait-range">{interp["lowEnd"]} ↔ {interp["highEnd"]}</span></td>'
         html += f'<td><span class="badge badge-{orientation_class}">{orientation}</span></td>'
         html += f'<td class="score-cell">{result["score"]:.2f}</td>'
         html += f'<td class="pattern-cell"><code>{result["pattern"]}</code></td>'
-        html += f'<td><span class="badge {consistency_class}">{int(result["consistency"]*100)}%</span></td>'
-        html += f'<td><span class="badge {agreement_class}">{int(result["agreement"]*100)}%</span></td>'
-        html += f'<td><span class="badge {situationality_class}">{int(result["situationality"]*100)}%</span></td>'
+        html += f'<td><span class="badge {consistency_class}">{consistency_display}</span></td>'
+        html += f'<td><span class="badge {agreement_class}">{agreement_display}</span></td>'
+        html += f'<td><span class="badge {situationality_class}">{situationality_display}</span></td>'
         html += '</tr>'
     
     # Add summary row
@@ -446,10 +462,15 @@ def generate_html_structure(selected_traits, results, answers, trait_data, overa
     html += '<td colspan="4"><strong>Average Across All Traits</strong></td>'
     avg_consistency_class = 'badge-high' if avg_consistency > 0.7 else ('badge-medium' if avg_consistency > 0.4 else 'badge-low')
     avg_agreement_class = 'badge-high' if avg_agreement > 0.7 else ('badge-medium' if avg_agreement > 0.4 else 'badge-low')
-    avg_situationality_class = 'badge-high' if avg_situationality > 0.6 else ('badge-medium' if avg_situationality > 0.3 else 'badge-low')
-    html += f'<td><span class="badge {avg_consistency_class}">{int(avg_consistency*100)}%</span></td>'
-    html += f'<td><span class="badge {avg_agreement_class}">{int(avg_agreement*100)}%</span></td>'
-    html += f'<td><span class="badge {avg_situationality_class}">{int(avg_situationality*100)}%</span></td>'
+    avg_situationality_class = 'badge-high' if avg_situationality > 0.7 else ('badge-medium' if avg_situationality > 0.4 else 'badge-low')
+    
+    avg_consistency_display = format_fraction(total_consistent, total_scenarios)
+    avg_agreement_display = f"{avg_agreement:.2f}"
+    avg_situationality_display = format_fraction(total_consistent, total_scenarios)
+    
+    html += f'<td><span class="badge {avg_consistency_class}">{avg_consistency_display}</span></td>'
+    html += f'<td><span class="badge {avg_agreement_class}">{avg_agreement_display}</span></td>'
+    html += f'<td><span class="badge {avg_situationality_class}">{avg_situationality_display}</span></td>'
     html += '</tr>'
     
     html += '</tbody></table></div></div>'
@@ -469,9 +490,9 @@ def generate_html_structure(selected_traits, results, answers, trait_data, overa
     # Quick metrics overview
     html += '<div class="metric-grid" style="margin: 20px 0;">'
     html += f'<div class="metric-card has-tooltip"><div class="metric-label">Traits Assessed</div><div class="metric-value">{len(selected_traits)}</div><span class="tooltip">Number of personality dimensions evaluated in your assessment</span></div>'
-    html += f'<div class="metric-card has-tooltip"><div class="metric-label">Avg Consistency</div><div class="metric-value">{int(avg_consistency*100)}%</div><span class="tooltip">How predictable your behavior is across different scenarios (higher = more consistent)</span></div>'
-    html += f'<div class="metric-card has-tooltip"><div class="metric-label">Self-Awareness</div><div class="metric-value">{int(avg_agreement*100)}%</div><span class="tooltip">How well your self-perception matches your actual behavioral choices (higher = better self-knowledge)</span></div>'
-    html += f'<div class="metric-card has-tooltip"><div class="metric-label">Adaptability</div><div class="metric-value">{int(avg_situationality*100)}%</div><span class="tooltip">Your tendency to adjust behavior based on context (higher = more flexible)</span></div>'
+    html += f'<div class="metric-card has-tooltip"><div class="metric-label">Avg Consistency</div><div class="metric-value">{avg_consistency_display}</div><span class="tooltip">How predictable your behavior is across different scenarios</span></div>'
+    html += f'<div class="metric-card has-tooltip"><div class="metric-label">Self-Awareness</div><div class="metric-value">{avg_agreement_display}</div><span class="tooltip">How well your self-perception matches your actual behavioral choices (0-2 scale, lower is better)</span></div>'
+    html += f'<div class="metric-card has-tooltip"><div class="metric-label">Adaptability</div><div class="metric-value">{avg_situationality_display}</div><span class="tooltip">Your tendency to maintain consistent behavior across contexts</span></div>'
     html += '</div>'
     
     # Add GPT-generated overall assessment sections
