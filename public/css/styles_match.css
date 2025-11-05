@@ -376,6 +376,28 @@ body {
   padding: var(--spacing-lg);
 }
 
+/* Styling for inferred traits (not directly assessed) */
+.dimension-card.inferred-trait {
+  border-left: 4px solid hsl(var(--secondary));
+  background: linear-gradient(to right, hsl(var(--secondary) / 0.05), transparent);
+}
+
+/* Visual indicator for inferred traits */
+.dimension-card.inferred-trait::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(to right, hsl(var(--secondary)), transparent);
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
 .dimension-score {
   display: flex;
   justify-content: space-between;
