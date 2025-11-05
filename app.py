@@ -620,11 +620,15 @@ def generate_html_structure(selected_traits, results, answers, trait_data, overa
 
 @app.route('/api/download', methods=['POST'])
 def download_report():
-    """Generate PDF report"""
+    """Generate comprehensive PDF report with AI analysis"""
     try:
         data = request.json or {}
         selected_traits = data.get('selectedTraits', [])
         answers = data.get('answers', {})
+        results = data.get('results', {})
+        overall_assessment = data.get('overallAssessment', {})
+        trait_analyses = data.get('traitAnalyses', {})
+        trait_data = data.get('traitData', {})
         
         # Create PDF in memory
         buffer = io.BytesIO()
@@ -647,26 +651,130 @@ def download_report():
             parent=styles['Heading2'],
             fontSize=16,
             textColor='#4a8f7a',
-            spaceAfter=8
+            spaceAfter=10,
+            spaceBefore=15
         )
         
-        # Title
+        subheading_style = ParagraphStyle(
+            'CustomSubheading',
+            parent=styles['Heading3'],
+            fontSize=13,
+            textColor='#3a7f6a',
+            spaceAfter=8,
+            spaceBefore=10
+        )
+        
+        body_style = ParagraphStyle(
+            'CustomBody',
+            parent=styles['Normal'],
+            fontSize=10,
+            spaceAfter=6,
+            leading=14
+        )
+        
+        # Title Page
         story.append(Paragraph("Personality Assessment Report", title_style))
         story.append(Paragraph(f"Generated: {datetime.now().strftime('%B %d, %Y')}", styles['Normal']))
-        story.append(Spacer(1, 0.3*inch))
+        story.append(Spacer(1, 0.5*inch))
         
-        # Summary
-        story.append(Paragraph("Assessment Summary", heading_style))
-        story.append(Paragraph(f"This report contains results for {len(selected_traits)} personality trait dimension(s).", styles['Normal']))
-        story.append(Spacer(1, 0.2*inch))
+        # Overall Assessment
+        if overall_assessment:
+            story.append(Paragraph("Overall Personality Assessment", heading_style))
+            
+            # Personality Type Title
+            personality_title = overall_assessment.get('personality_type_title', 'Multifaceted Professional')
+            story.append(Paragraph(f"<b>Your Personality Type: {personality_title}</b>", body_style))
+            story.append(Spacer(1, 0.2*inch))
+            
+            # Profile Summary
+            story.append(Paragraph("<b>Personality Profile</b>", subheading_style))
+            story.append(Paragraph(overall_assessment.get('profile_summary', ''), body_style))
+            story.append(Spacer(1, 0.1*inch))
+            
+            # Decision-Making Style
+            story.append(Paragraph("<b>Decision-Making Style</b>", subheading_style))
+            story.append(Paragraph(overall_assessment.get('decision_style', ''), body_style))
+            story.append(Spacer(1, 0.1*inch))
+            
+            # Self-Awareness & Adaptability
+            story.append(Paragraph("<b>Self-Awareness &amp; Adaptability</b>", subheading_style))
+            story.append(Paragraph(overall_assessment.get('awareness_adaptability', ''), body_style))
+            story.append(Spacer(1, 0.1*inch))
+            
+            # Behavioral Patterns
+            story.append(Paragraph("<b>Behavioral Patterns &amp; Themes</b>", subheading_style))
+            story.append(Paragraph(overall_assessment.get('patterns_themes', ''), body_style))
+            story.append(Spacer(1, 0.1*inch))
+            
+            # Professional Implications
+            story.append(Paragraph("<b>Professional Implications</b>", subheading_style))
+            story.append(Paragraph(overall_assessment.get('professional_implications', ''), body_style))
+            story.append(Spacer(1, 0.1*inch))
+            
+            # Development Insights
+            story.append(Paragraph("<b>Development Insights</b>", subheading_style))
+            story.append(Paragraph(overall_assessment.get('development_insights', ''), body_style))
+            
+            story.append(PageBreak())
         
-        # Traits assessed
-        story.append(Paragraph("Traits Assessed:", heading_style))
+        # Detailed Trait Analysis
         for trait in selected_traits:
-            story.append(Paragraph(f"• {trait}", styles['Normal']))
-        
-        story.append(Spacer(1, 0.3*inch))
-        story.append(Paragraph("Note: Detailed analysis is available in the web interface. This PDF provides a summary of your assessment responses.", styles['Normal']))
+            result = results.get(trait, {})
+            trait_info = trait_data.get(trait, {})
+            interp = trait_info.get('interpretation', {})
+            trait_analysis = trait_analyses.get(trait, {})
+            
+            story.append(Paragraph(f"{interp.get('name', trait)}", heading_style))
+            story.append(Paragraph(f"<i>{interp.get('lowEnd', '')} ↔ {interp.get('highEnd', '')}</i>", body_style))
+            story.append(Spacer(1, 0.1*inch))
+            
+            # Metrics
+            story.append(Paragraph(f"<b>Score:</b> {result.get('score', 0):.2f} | <b>Pattern:</b> {result.get('pattern', 'N/A')} | <b>Consistency:</b> {int(result.get('consistency', 0)*100)}% | <b>Self-Awareness:</b> {int(result.get('agreement', 0)*100)}%", body_style))
+            story.append(Spacer(1, 0.15*inch))
+            
+            # AI Analysis
+            if trait_analysis:
+                story.append(Paragraph("<b>Behavioral Profile</b>", subheading_style))
+                story.append(Paragraph(trait_analysis.get('behavioral_profile', ''), body_style))
+                story.append(Spacer(1, 0.1*inch))
+                
+                story.append(Paragraph("<b>Self-Awareness Analysis</b>", subheading_style))
+                story.append(Paragraph(trait_analysis.get('self_awareness', ''), body_style))
+                story.append(Spacer(1, 0.1*inch))
+                
+                story.append(Paragraph("<b>Adaptability</b>", subheading_style))
+                story.append(Paragraph(trait_analysis.get('adaptability', ''), body_style))
+                story.append(Spacer(1, 0.1*inch))
+                
+                story.append(Paragraph("<b>Pattern Summary</b>", subheading_style))
+                story.append(Paragraph(trait_analysis.get('pattern_summary', ''), body_style))
+            
+            # Questions and Answers
+            story.append(Spacer(1, 0.2*inch))
+            story.append(Paragraph("<b>Your Responses</b>", subheading_style))
+            
+            trait_questions = trait_info.get('questions', [])
+            trait_answers = answers.get(trait, {})
+            
+            for q in trait_questions:
+                q_id = q.get('id', '')
+                q_text = q.get('text', '')
+                user_answer = trait_answers.get(q_id)
+                
+                # Find selected option
+                selected_option = None
+                for opt in q.get('options', []):
+                    if opt.get('value') == user_answer:
+                        selected_option = opt
+                        break
+                
+                if selected_option:
+                    story.append(Paragraph(f"<b>Q{q_id}:</b> {q_text}", body_style))
+                    story.append(Paragraph(f"<i>Your choice:</i> {selected_option.get('label', '')} (Score: {selected_option.get('value', 0)})", body_style))
+                    story.append(Paragraph(f"<i>Reveals:</i> {selected_option.get('decoding', 'N/A')}", body_style))
+                    story.append(Spacer(1, 0.1*inch))
+            
+            story.append(PageBreak())
         
         # Build PDF
         doc.build(story)
