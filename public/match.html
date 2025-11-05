@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Candidate-Job Matching | Personality Assessment</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .upload-zone {
+      border: 2px dashed hsl(var(--border));
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      background: hsl(var(--card-bg));
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 20px;
+    }
+    
+    .upload-zone:hover {
+      border-color: hsl(var(--primary));
+      background: hsl(var(--primary) / 0.05);
+    }
+    
+    .upload-zone.has-file {
+      border-color: hsl(var(--success));
+      background: hsl(var(--success) / 0.1);
+    }
+    
+    .upload-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+      color: hsl(var(--text-secondary));
+    }
+    
+    .file-name {
+      font-weight: 600;
+      color: hsl(var(--primary));
+      margin-top: 10px;
+    }
+    
+    .match-results {
+      margin-top: 30px;
+    }
+    
+    .fit-score-banner {
+      background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+      color: white;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .fit-score-value {
+      font-size: 64px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    
+    .fit-score-label {
+      font-size: 24px;
+      opacity: 0.9;
+    }
+    
+    .dimension-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+    
+    .dimension-card {
+      background: hsl(var(--card-bg));
+      border: 1px solid hsl(var(--border));
+      border-radius: 8px;
+      padding: 20px;
+    }
+    
+    .dimension-score {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    
+    .dimension-name {
+      font-weight: 600;
+      color: hsl(var(--primary));
+    }
+    
+    .score-badge {
+      background: hsl(var(--primary));
+      color: white;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-weight: bold;
+    }
+    
+    .score-badge.low {
+      background: hsl(var(--warning));
+    }
+    
+    .score-badge.medium {
+      background: hsl(var(--secondary));
+    }
+    
+    .score-badge.high {
+      background: hsl(var(--success));
+    }
+    
+    .likert-bar {
+      height: 8px;
+      background: hsl(var(--border));
+      border-radius: 4px;
+      margin: 10px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .likert-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981);
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+    
+    .evidence-list {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .evidence-list li {
+      padding: 10px;
+      margin: 5px 0;
+      background: hsl(var(--card-bg));
+      border-left: 3px solid hsl(var(--primary));
+      border-radius: 4px;
+    }
+    
+    .evidence-list li:before {
+      content: "✓ ";
+      color: hsl(var(--success));
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    
+    .concern-list li:before {
+      content: "⚠ ";
+      color: hsl(var(--warning));
+    }
+    
+    .recommendation-banner {
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .recommendation-banner.strongly-recommend {
+      background: hsl(var(--success) / 0.2);
+      border: 2px solid hsl(var(--success));
+      color: hsl(var(--success));
+    }
+    
+    .recommendation-banner.recommend {
+      background: hsl(var(--primary) / 0.2);
+      border: 2px solid hsl(var(--primary));
+      color: hsl(var(--primary));
+    }
+    
+    .recommendation-banner.caution {
+      background: hsl(var(--warning) / 0.2);
+      border: 2px solid hsl(var(--warning));
+      color: hsl(var(--warning));
+    }
+    
+    .recommendation-banner.not-recommend {
+      background: hsl(var(--danger) / 0.2);
+      border: 2px solid hsl(var(--danger));
+      color: hsl(var(--danger));
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎯 Candidate-Job Matching</h1>
+      <p>Upload a candidate's personality report and job requirements to analyze fit</p>
+      <a href="/" style="color: hsl(var(--primary)); text-decoration: none;">← Back to Assessment</a>
+    </header>
+
+    <div class="card">
+      <h2>Upload Documents</h2>
+      <p style="color: hsl(var(--text-secondary)); margin-bottom: 30px;">
+        Both files must be in PDF format. The candidate report should be generated from this assessment tool, 
+        and the job requirements should detail the role's personality and behavioral expectations.
+      </p>
+
+      <div class="upload-zone" id="candidateUpload">
+        <div class="upload-icon">📄</div>
+        <h3>Candidate's Personality Report</h3>
+        <p style="color: hsl(var(--text-secondary));">Click to upload or drag & drop</p>
+        <input type="file" id="candidateFile" accept=".pdf" style="display: none;">
+        <div class="file-name" id="candidateFileName"></div>
+      </div>
+
+      <div class="upload-zone" id="jobUpload">
+        <div class="upload-icon">📋</div>
+        <h3>Job Requirements Document</h3>
+        <p style="color: hsl(var(--text-secondary));">Click to upload or drag & drop</p>
+        <input type="file" id="jobFile" accept=".pdf" style="display: none;">
+        <div class="file-name" id="jobFileName"></div>
+      </div>
+
+      <button id="analyzeBtn" class="btn btn-primary" disabled style="width: 100%; margin-top: 20px;">
+        Analyze Candidate Fit
+      </button>
+    </div>
+
+    <div id="results" class="match-results"></div>
+  </div>
+
+  <script>
+    let candidateFile = null;
+    let jobFile = null;
+
+    // Candidate file upload
+    const candidateUpload = document.getElementById('candidateUpload');
+    const candidateInput = document.getElementById('candidateFile');
+    const candidateFileName = document.getElementById('candidateFileName');
+
+    candidateUpload.onclick = () => candidateInput.click();
+    
+    candidateInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file && file.type === 'application/pdf') {
+        candidateFile = file;
+        candidateFileName.textContent = `✓ ${file.name}`;
+        candidateUpload.classList.add('has-file');
+        checkBothFilesUploaded();
+      }
+    };
+
+    // Job file upload
+    const jobUpload = document.getElementById('jobUpload');
+    const jobInput = document.getElementById('jobFile');
+    const jobFileName = document.getElementById('jobFileName');
+
+    jobUpload.onclick = () => jobInput.click();
+    
+    jobInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file && file.type === 'application/pdf') {
+        jobFile = file;
+        jobFileName.textContent = `✓ ${file.name}`;
+        jobUpload.classList.add('has-file');
+        checkBothFilesUploaded();
+      }
+    };
+
+    function checkBothFilesUploaded() {
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      analyzeBtn.disabled = !(candidateFile && jobFile);
+    }
+
+    // Analyze button
+    document.getElementById('analyzeBtn').onclick = async () => {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Analyzing candidate-job fit with AI...</p></div>';
+
+      const formData = new FormData();
+      formData.append('candidate_report', candidateFile);
+      formData.append('job_requirements', jobFile);
+
+      try {
+        const response = await fetch('/api/match-candidate', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Analysis failed');
+        }
+
+        const result = await response.json();
+        displayResults(result);
+
+      } catch (error) {
+        console.error('Error:', error);
+        resultsDiv.innerHTML = `
+          <div class="card" style="background: hsl(var(--warning) / 0.1); border-color: hsl(var(--warning));">
+            <h3 style="color: hsl(var(--warning));">Analysis Error</h3>
+            <p>Sorry, there was an error analyzing the documents. Please try again.</p>
+            <p style="font-size: 13px; color: hsl(var(--text-tertiary));">Error: ${error.message}</p>
+          </div>
+        `;
+      }
+    };
+
+    function displayResults(data) {
+      const resultsDiv = document.getElementById('results');
+      
+      // Determine fit level styling
+      const fitScore = data.overall_fit_score || 3;
+      let fitClass = 'medium';
+      if (fitScore >= 4.5) fitClass = 'high';
+      else if (fitScore <= 2.5) fitClass = 'low';
+
+      // Determine recommendation styling
+      let recClass = 'recommend';
+      const recText = data.hiring_recommendation || '';
+      if (recText.includes('Strongly Recommend')) recClass = 'strongly-recommend';
+      else if (recText.includes('with Reservations')) recClass = 'caution';
+      else if (recText.includes('Do Not Recommend')) recClass = 'not-recommend';
+
+      let html = `
+        <div class="fit-score-banner">
+          <div class="fit-score-label">Overall Candidate Fit Score</div>
+          <div class="fit-score-value">${fitScore.toFixed(1)}/5.0</div>
+          <div class="fit-score-label">${data.overall_fit_label || 'Adequate Fit'}</div>
+        </div>
+
+        <div class="card">
+          <h2>Executive Summary</h2>
+          <p style="line-height: 1.8; white-space: pre-wrap;">${data.executive_summary || 'No summary available'}</p>
+        </div>
+
+        <div class="card">
+          <h2>Hiring Recommendation</h2>
+          <div class="recommendation-banner ${recClass}">
+            ${data.hiring_recommendation || 'No recommendation available'}
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Dimensional Fit Analysis</h2>
+          <div class="dimension-grid">
+      `;
+
+      // Dimensional scores
+      const dimensions = data.dimensional_scores || {};
+      for (const [key, value] of Object.entries(dimensions)) {
+        const score = value.score || 3;
+        let scoreClass = 'medium';
+        if (score >= 4) scoreClass = 'high';
+        else if (score <= 2) scoreClass = 'low';
+
+        const dimName = key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        
+        html += `
+          <div class="dimension-card">
+            <div class="dimension-score">
+              <span class="dimension-name">${dimName}</span>
+              <span class="score-badge ${scoreClass}">${score}/5</span>
+            </div>
+            <div class="likert-bar">
+              <div class="likert-fill" style="width: ${(score/5)*100}%"></div>
+            </div>
+            <p style="font-size: 14px; color: hsl(var(--text-secondary)); margin-top: 10px;">
+              ${value.justification || ''}
+            </p>
+          </div>
+        `;
+      }
+
+      html += `
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Key Strengths</h2>
+          <ul class="evidence-list">
+            ${(data.key_strengths || []).map(s => `<li>${s}</li>`).join('')}
+          </ul>
+        </div>
+
+        <div class="card">
+          <h2>Potential Concerns</h2>
+          <ul class="evidence-list concern-list">
+            ${(data.potential_concerns || []).map(c => `<li>${c}</li>`).join('')}
+          </ul>
+        </div>
+
+        <div class="card">
+          <h2>Specific Evidence from Reports</h2>
+          <ul class="evidence-list">
+            ${(data.specific_evidence || []).map(e => `<li>${e}</li>`).join('')}
+          </ul>
+        </div>
+
+        <div class="card">
+          <h2>Risk Assessment</h2>
+          <p style="line-height: 1.8; white-space: pre-wrap;">${data.risk_assessment || 'No risk assessment available'}</p>
+        </div>
+
+        <div class="card">
+          <h2>Development Needs</h2>
+          <ul class="evidence-list">
+            ${(data.development_needs || []).map(d => `<li>${d}</li>`).join('')}
+          </ul>
+        </div>
+
+        <div class="card">
+          <h2>Onboarding Recommendations</h2>
+          <p style="margin-bottom: 15px; color: hsl(var(--text-secondary));">
+            If this candidate is hired, consider these recommendations for optimal success:
+          </p>
+          <ul class="evidence-list">
+            ${(data.onboarding_recommendations || []).map(r => `<li>${r}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+
+      resultsDiv.innerHTML = html;
+      resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  </script>
+</body>
+</html>
