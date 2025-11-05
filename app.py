@@ -856,7 +856,110 @@ def match_candidate():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/match-candidate', methods=['POST'])
+def match_candidate():
+    """Compare candidate report against selected job trait requirements using AI"""
+    try:
+        # Check if candidate report was uploaded
+        if 'candidate_report' not in request.files:
+            return jsonify({'error': 'Candidate report PDF is required'}), 400
+        
+        candidate_file = request.files['candidate_report']
+        
+        # Get job requirements (now as JSON from form data)
+        job_requirements_json = request.form.get('job_requirements')
+        if not job_requirements_json:
+            return jsonify({'error': 'Job requirements are required'}), 400
+        
+        # Validate file type
+        if not candidate_file.filename.endswith('.pdf'):
+            return jsonify({'error': 'Candidate report must be PDF format'}), 400
+        
+        print("\n" + "="*80)
+        print("JOB MATCHING REQUEST RECEIVED - TRAIT SELECTION MODE")
+        print("="*80)
+        print(f"Candidate Report: {candidate_file.filename}")
+        
+        # Parse job requirements
+        job_requirements = json.loads(job_requirements_json)
+        print(f"\nJob Requirements ({len(job_requirements)} traits selected):")
+        for trait_name, trait_data in job_requirements.items():
+            print(f"  - {trait_name}: {trait_data['level'].upper()}")
+        
+        # Extract text from candidate PDF
+        candidate_text = extract_text_from_pdf(candidate_file)
+        
+        if not candidate_text:
+            return jsonify({'error': 'Could not extract text from candidate PDF'}), 400
+        
+        print(f"\nExtracted candidate text: {len(candidate_text)} characters")
+        
+        # Extract which traits were actually assessed in the candidate's report
+        assessed_traits = extract_assessed_traits(candidate_text)
+        print(f"\nTraits found in candidate's report: {assessed_traits}")
+        print("-"*80 + "\n")
+        
+        # Generate AI matching analysis with awareness of what was actually tested
+        matching_analysis = generate_matching_analysis_from_traits(
+            candidate_text, 
+            job_requirements, 
+            assessed_traits
+        )
+        
+        print("\nMATCHING ANALYSIS COMPLETE")
+        print("="*80 + "\n")
+        
+        return jsonify(matching_analysis)
+        
+    except Exception as e:
+        print(f"Error in match-candidate: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
+
+def extract_assessed_traits(candidate_text):
+    """Extract list of traits that were actually assessed in the candidate's report"""
+    
+    # All possible trait names from your assessment tool
+    all_trait_names = [
+        'Analytical Thinking', 'Intuitive Thinking', 'Risk-Taking', 'Risk Aversion',
+        'Collaboration', 'Independent Work', 'Detail Orientation', 'Big Picture Thinking',
+        'Adaptability', 'Consistency', 'Proactivity', 'Reactivity',
+        'Empathy', 'Task Focus', 'Innovation', 'Process Adherence',
+        'Decisiveness', 'Deliberation', 'Assertiveness', 'Diplomacy',
+        'Optimism', 'Realism', 'Structured', 'Flexible',
+        'Results-Oriented', 'Process-Oriented', 'Competitive', 'Cooperative',
+        'Confidence', 'Humility'
+    ]
+    
+    assessed_traits = []
+    
+    # Look for traits mentioned in section headers or trait analysis sections
+    for trait in all_trait_names:
+        # Check if trait appears as a header or in "Trait:" format
+        if trait in candidate_text:
+            # Additional verification: check if it appears in a substantial way
+            # (not just mentioned in passing)
+            trait_lower = trait.lower()
+            text_lower = candidate_text.lower()
+            
+            # Look for patterns like "Trait: X" or substantial discussion
+            patterns = [
+                f"trait: {trait_lower}",
+                f"{trait_lower}\n",
+                f"behavioral profile",
+                f"pattern analysis"
+            ]
+            
+            # If trait appears near these patterns, it was likely assessed
+            for pattern in patterns:
+                if pattern in text_lower and trait_lower in text_lower[max(0, text_lower.find(pattern)-200):text_lower.find(pattern)+500]:
+                    if trait not in assessed_traits:
+                        assessed_traits.append(trait)
+                    break
+    
+    return assessed_traits
 
 def extract_text_from_pdf(pdf_file):
     """Extract text content from PDF file"""
@@ -881,17 +984,31 @@ def extract_text_from_pdf(pdf_file):
         return None
 
 
-def generate_matching_analysis_from_traits(candidate_text, job_requirements):
+
+def generate_matching_analysis_from_traits(candidate_text, job_requirements, assessed_traits):
     """Use GPT to analyze candidate-job fit based on specific trait requirements"""
     
     # Build requirements summary
     requirements_summary = "REQUIRED TRAIT PROFILE FOR THE ROLE:\n"
     requirements_summary += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
     
+    # Categorize required traits into assessed and not assessed
+    directly_assessed = []
+    not_assessed = []
+    
     for trait_name, trait_data in job_requirements.items():
         level = trait_data['level'].upper()
         description = trait_data['description']
-        requirements_summary += f"**{trait_name}** (Required Level: {level})\n"
+        
+        is_assessed = trait_name in assessed_traits
+        
+        if is_assessed:
+            directly_assessed.append(trait_name)
+            requirements_summary += f"**{trait_name}** (Required Level: {level}) ✓ DIRECTLY ASSESSED\n"
+        else:
+            not_assessed.append(trait_name)
+            requirements_summary += f"**{trait_name}** (Required Level: {level}) ⚠ NOT DIRECTLY ASSESSED\n"
+        
         requirements_summary += f"   Description: {description}\n\n"
     
     # Build comprehensive prompt
@@ -904,46 +1021,63 @@ CANDIDATE'S PERSONALITY ASSESSMENT REPORT:
 
 {requirements_summary}
 
+IMPORTANT CONTEXT:
+The candidate was DIRECTLY ASSESSED on these {len(directly_assessed)} traits: {', '.join(directly_assessed) if directly_assessed else 'NONE'}
+
+The candidate was NOT directly assessed on these {len(not_assessed)} traits: {', '.join(not_assessed) if not_assessed else 'NONE'}
+
 ANALYSIS TASK:
 
-You must analyze the candidate against EACH of the {len(job_requirements)} required traits individually, then provide an overall assessment.
+You must analyze the candidate against EACH of the {len(job_requirements)} required traits individually.
 
-1. TRAIT-BY-TRAIT ANALYSIS:
-   For EACH required trait, provide:
-   - A fit score (1-5 Likert scale) where:
-     * 1 = Major mismatch (candidate shows opposite tendency)
-     * 2 = Below requirements (candidate is deficient in this trait)
-     * 3 = Meets minimum requirements (acceptable but not ideal)
-     * 4 = Exceeds requirements (strong match)
-     * 5 = Exceptional match (perfect alignment)
-   - A 2-3 sentence analysis explaining the score based on SPECIFIC evidence from the candidate's report
+FOR DIRECTLY ASSESSED TRAITS (✓):
+- Base your analysis SOLELY on the specific trait assessment from the report
+- Use the candidate's actual scores, patterns, and behavioral examples for that trait
+- Provide evidence-based scoring (1-5 Likert scale)
 
-2. OVERALL FIT SCORE (1-5 Likert scale):
-   Calculate the weighted average of all trait scores to determine overall fit:
-   1 = Poor Fit (major misalignment across multiple traits)
-   2 = Below Average Fit (significant concerns in key areas)
-   3 = Adequate Fit (meets minimum requirements, development needed)
-   4 = Good Fit (strong alignment across most traits)
-   5 = Excellent Fit (exceptional match on critical traits)
+FOR NON-ASSESSED TRAITS (⚠):
+- Clearly state "NOT DIRECTLY ASSESSED" at the start of the analysis
+- Make reasonable inferences from OTHER traits and behaviors in the report
+- Provide a SECONDARY INFERENCE section explaining what evidence you're using
+- Be more conservative in scoring (default to 3 unless strong evidence suggests otherwise)
+- Example format: "NOT DIRECTLY ASSESSED. However, based on their [specific trait X] showing [specific behavior], we can infer..."
 
-3. DETAILED ANALYSIS SECTIONS:
-   - KEY STRENGTHS: List 3-5 specific traits where the candidate excels relative to requirements
-   - POTENTIAL CONCERNS: List 2-4 specific traits where there are gaps or mismatches
-   - DEVELOPMENT NEEDS: List 3-5 specific areas requiring growth or support
-   - SPECIFIC EVIDENCE: List 4-6 direct quotes or references from the candidate's report
-   - RISK ASSESSMENT: 2-3 paragraphs on potential risks of hiring this candidate
-   - HIRING RECOMMENDATION: Clear decision (Strongly Recommend / Recommend / Recommend with Reservations / Do Not Recommend) with 2-3 sentence rationale
-   - ONBOARDING RECOMMENDATIONS: List 3-5 specific strategies to maximize this candidate's success
-   - EXECUTIVE SUMMARY: 3-4 paragraph comprehensive overview
+SCORING SCALE (1-5 Likert):
+1 = Major mismatch (candidate shows opposite tendency)
+2 = Below requirements (candidate is deficient in this trait)
+3 = Meets minimum requirements (acceptable but not ideal) - USE FOR NON-ASSESSED IF UNCLEAR
+4 = Exceeds requirements (strong match)
+5 = Exceptional match (perfect alignment)
+
+ANALYSIS SECTIONS REQUIRED:
+
+1. TRAIT-BY-TRAIT ANALYSIS - For EACH required trait provide:
+   - Fit score (1-5)
+   - Whether it was directly assessed (true/false)
+   - Primary analysis (2-3 sentences with specific evidence)
+   - If NOT assessed: secondary_inference field (2-3 sentences explaining what OTHER evidence you're using)
+
+2. OVERALL FIT SCORE (1-5): Weighted average, but weight directly assessed traits more heavily
+
+3. DETAILED SECTIONS:
+   - KEY STRENGTHS (3-5 items): Focus on directly assessed strengths
+   - POTENTIAL CONCERNS (2-4 items): Note which concerns are based on inference vs direct assessment
+   - DEVELOPMENT NEEDS (3-5 items)
+   - SPECIFIC EVIDENCE (4-6 direct quotes/references from report)
+   - ASSESSMENT COVERAGE NOTE: Explain which traits were assessed vs inferred
+   - RISK ASSESSMENT (2-3 paragraphs): Include discussion of assessment gaps
+   - HIRING RECOMMENDATION (Clear decision with rationale)
+   - ONBOARDING RECOMMENDATIONS (3-5 items)
+   - EXECUTIVE SUMMARY (3-4 paragraphs)
 
 CRITICAL REQUIREMENTS:
-- Base ALL scores on SPECIFIC evidence from the candidate's actual report
-- Compare the candidate's demonstrated behaviors against each required trait
-- Consider both the level (Low/Medium/High) and the presence of the trait
-- Reference actual scores, patterns, or behavioral examples from the report
-- Be concrete and evidence-based, not generic
+- NEVER claim direct assessment evidence for non-assessed traits
+- Always distinguish between direct assessment and inference
+- Be transparent about assessment gaps
+- Use specific quotes and examples for directly assessed traits
+- For inferred traits, explain the logical basis clearly
 
-Format your response as JSON with this exact structure:
+Format as JSON:
 {{
   "overall_fit_score": <1-5>,
   "overall_fit_label": "<Poor Fit|Below Average|Adequate|Good Fit|Excellent Fit>",
@@ -951,22 +1085,25 @@ Format your response as JSON with this exact structure:
     "<trait_name>": {{
       "score": <1-5>,
       "required_level": "<low|medium|high>",
-      "analysis": "2-3 sentence analysis with specific evidence"
+      "directly_assessed": <true|false>,
+      "analysis": "2-3 sentence analysis with specific evidence",
+      "secondary_inference": "If not directly assessed: explain what OTHER evidence supports this score"
     }}
   }},
-  "key_strengths": ["strength 1", "strength 2", "strength 3", ...],
+  "key_strengths": ["strength 1", "strength 2", ...],
   "potential_concerns": ["concern 1", "concern 2", ...],
-  "development_needs": ["need 1", "need 2", "need 3", ...],
-  "specific_evidence": ["evidence 1 with specific quote or reference", "evidence 2", ...],
-  "risk_assessment": "2-3 paragraph assessment",
+  "development_needs": ["need 1", "need 2", ...],
+  "specific_evidence": ["evidence 1 with quote", "evidence 2", ...],
+  "assessment_coverage": "Paragraph explaining which traits were directly assessed vs inferred",
+  "risk_assessment": "2-3 paragraphs including discussion of assessment gaps",
   "hiring_recommendation": "Clear recommendation with rationale",
-  "onboarding_recommendations": ["recommendation 1", "recommendation 2", ...],
-  "executive_summary": "3-4 paragraph comprehensive summary"
+  "onboarding_recommendations": ["rec 1", "rec 2", ...],
+  "executive_summary": "3-4 paragraphs"
 }}
 
-Include a trait_scores entry for EVERY required trait: {', '.join(job_requirements.keys())}"""
+Required traits to analyze: {', '.join(job_requirements.keys())}"""
 
-    print("\nGPT PROMPT FOR JOB MATCHING (TRAIT MODE):")
+    print("\nGPT PROMPT FOR JOB MATCHING (WITH ASSESSMENT AWARENESS):")
     print("-"*80)
     print(prompt[:800] + "..." if len(prompt) > 800 else prompt)
     print("-"*80 + "\n")
@@ -975,11 +1112,11 @@ Include a trait_scores entry for EVERY required trait: {', '.join(job_requiremen
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are an expert HR analyst and organizational psychologist. Provide detailed, evidence-based analysis of candidate-job fit. Use specific examples from the candidate's report. Score each required trait individually. Respond only with valid JSON."},
+                {"role": "system", "content": "You are an expert HR analyst. Distinguish clearly between directly assessed traits and inferred traits. Be transparent about assessment gaps. Use specific evidence from the report. Respond only with valid JSON."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
-            max_tokens=4000
+            max_tokens=4500
         )
         
         content = response.choices[0].message.content or "{}"
@@ -997,30 +1134,50 @@ Include a trait_scores entry for EVERY required trait: {', '.join(job_requiremen
         
         analysis = json.loads(content)
         
-        # Ensure all required traits have scores
+        # Ensure all required traits have scores and proper structure
         if 'trait_scores' not in analysis:
             analysis['trait_scores'] = {}
         
         for trait_name, trait_data in job_requirements.items():
             if trait_name not in analysis['trait_scores']:
+                is_assessed = trait_name in assessed_traits
                 analysis['trait_scores'][trait_name] = {
                     'score': 3,
                     'required_level': trait_data['level'],
-                    'analysis': 'Insufficient information to assess this trait.'
+                    'directly_assessed': is_assessed,
+                    'analysis': 'Insufficient information to assess this trait.',
+                    'secondary_inference': '' if is_assessed else 'This trait was not directly assessed in the candidate report.'
                 }
+            else:
+                # Ensure directly_assessed field exists
+                if 'directly_assessed' not in analysis['trait_scores'][trait_name]:
+                    analysis['trait_scores'][trait_name]['directly_assessed'] = trait_name in assessed_traits
+                
+                # Ensure secondary_inference field exists for non-assessed traits
+                if not analysis['trait_scores'][trait_name]['directly_assessed'] and 'secondary_inference' not in analysis['trait_scores'][trait_name]:
+                    analysis['trait_scores'][trait_name]['secondary_inference'] = 'Inferred from other behavioral indicators.'
+        
+        # Add assessment coverage if missing
+        if 'assessment_coverage' not in analysis:
+            analysis['assessment_coverage'] = f"The candidate was directly assessed on {len(directly_assessed)} of the {len(job_requirements)} required traits. Remaining traits were inferred from related behavioral patterns."
         
         return analysis
         
     except Exception as e:
         print(f"GPT Error for job matching: {str(e)}")
+        import traceback
+        traceback.print_exc()
         
         # Fallback response
         fallback_trait_scores = {}
         for trait_name, trait_data in job_requirements.items():
+            is_assessed = trait_name in assessed_traits
             fallback_trait_scores[trait_name] = {
                 'score': 3,
                 'required_level': trait_data['level'],
-                'analysis': 'Analysis could not be completed due to a technical error.'
+                'directly_assessed': is_assessed,
+                'analysis': 'Analysis could not be completed due to a technical error.',
+                'secondary_inference': '' if is_assessed else 'This trait was not directly assessed.'
             }
         
         return {
@@ -1032,6 +1189,7 @@ Include a trait_scores entry for EVERY required trait: {', '.join(job_requiremen
             'potential_concerns': ['Technical error prevented full analysis'],
             'development_needs': ['Unable to assess'],
             'specific_evidence': ['Error occurred during analysis'],
+            'assessment_coverage': f'{len(directly_assessed)} traits were directly assessed, {len(not_assessed)} were not.',
             'risk_assessment': 'Analysis could not be completed due to a technical error.',
             'hiring_recommendation': 'Unable to provide recommendation - please retry analysis',
             'onboarding_recommendations': ['Retry analysis for recommendations'],
