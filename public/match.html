@@ -296,25 +296,37 @@
       card.style.display = text.includes(term) ? 'block' : 'none';
     });
   });
-
+  
+    
   analyzeBtn.addEventListener('click', async () => {
     resultsDiv.innerHTML = `
       <div class="loading">
         <div class="spinner"></div>
         <p>Analyzing candidate-job fit with AI...</p>
+        <p style="font-size: 14px; color: hsl(var(--text-secondary)); margin-top: 10px;">
+          This may take 30-60 seconds...
+        </p>
       </div>
     `;
-
+  
+    // AUTO-SCROLL TO RESULTS DIV
+    resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  
     const formData = new FormData();
     formData.append('candidate_report', candidateFile);
     formData.append('job_requirements', JSON.stringify(selectedJobTraits));
-
+  
     try {
       const resp = await fetch('/api/match-candidate', { method: 'POST', body: formData });
       if (!resp.ok) throw new Error('Analysis failed');
       const result = await resp.json();
       step2.style.display = 'none';
       displayResults(result);
+      
+      // Scroll to results again after display
+      setTimeout(() => {
+        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     } catch (err) {
       resultsDiv.innerHTML = `
         <div class="card" style="background: hsl(var(--warning) / 0.1); border-color: hsl(var(--warning));">
@@ -448,138 +460,170 @@
   let currentMatchingResults = null; // Store results globally for download
   
   function displayResults(data) {
-    currentMatchingResults = data; // Store for download
-    
-    const fitScore = data.overall_fit_score || 3;
-    const fitLabel = data.overall_fit_label || 'Adequate Fit';
-    let recClass = 'recommend';
-    const recText = data.hiring_recommendation || 'No recommendation available';
-    if (recText.includes('Strongly Recommend')) recClass = 'strongly-recommend';
-    else if (recText.includes('Do Not Recommend')) recClass = 'not-recommend';
-    else if (recText.includes('with Reservations')) recClass = 'caution';
+  currentMatchingResults = data; // Store for download
   
-    let html = `
-      <div class="fit-score-banner">
-        <div class="fit-score-label">Overall Candidate Fit Score</div>
-        <div class="fit-score-value">${Number(fitScore).toFixed(1)}/5.0</div>
-        <div class="fit-score-label">${fitLabel}</div>
+  const fitScore = data.overall_fit_score || 3;
+  const fitLabel = data.overall_fit_label || 'Adequate Fit';
+  let recClass = 'recommend';
+  const recText = data.hiring_recommendation || 'No recommendation available';
+  if (recText.includes('Strongly Recommend')) recClass = 'strongly-recommend';
+  else if (recText.includes('Do Not Recommend')) recClass = 'not-recommend';
+  else if (recText.includes('with Reservations')) recClass = 'caution';
+
+  let html = `
+    <div class="fit-score-banner">
+      <div class="fit-score-label">Overall Candidate Fit Score</div>
+      <div class="fit-score-value">${Number(fitScore).toFixed(1)}/5.0</div>
+      <div class="fit-score-label">${fitLabel}</div>
+    </div>
+
+    <!-- DOWNLOAD BUTTON -->
+    <div class="card" style="background: hsl(var(--primary) / 0.1); border-color: hsl(var(--primary));">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div>
+          <h3 style="margin: 0 0 5px 0;">Download Match Report</h3>
+          <p style="margin: 0; color: hsl(var(--text-secondary)); font-size: 14px;">
+            Save this analysis as a PDF document for your records
+          </p>
+        </div>
+        <button id="downloadMatchBtn" class="btn btn-primary" style="white-space: nowrap;">
+          📄 Download PDF
+        </button>
       </div>
+    </div>
+
+    <!-- ASSESSMENT COVERAGE WARNING -->
+    ${data.assessment_coverage ? `
+    <div class="card" style="background: hsl(var(--secondary) / 0.1); border-left: 4px solid hsl(var(--secondary));">
+      <h3 style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 20px;">ℹ️</span>
+        Assessment Coverage
+      </h3>
+      <p style="line-height: 1.8;">${data.assessment_coverage}</p>
+      <p style="font-size: 13px; color: hsl(var(--text-secondary)); margin-top: 10px; font-style: italic;">
+        Note: Traits marked as "NOT DIRECTLY ASSESSED" are inferred from related behaviors and should be interpreted with caution.
+      </p>
+    </div>
+    ` : ''}
+
+    <div class="card">
+      <h3>Hiring Recommendation</h3>
+      <div class="recommendation-banner ${recClass}">${recText}</div>
+    </div>
+
+    <div class="card">
+      <h3>Executive Summary</h3>
+      <p style="line-height: 1.8; white-space: pre-wrap;">${data.executive_summary || 'No summary available'}</p>
+    </div>
+
+    <div class="card">
+      <h3>Trait-by-Trait Fit Analysis</h3>
+      <p style="color: hsl(var(--text-secondary)); margin-bottom: 20px; font-size: 14px;">
+        🎯 = Directly assessed in candidate's report | ⚠️ = Inferred from other traits
+      </p>
+      <div class="dimension-grid">
+  `;
+
+  const traitScores = data.trait_scores || {};
+  const allShownTraits = new Set([...Object.keys(selectedJobTraits), ...Object.keys(traitScores)]);
   
-      <!-- ADD DOWNLOAD BUTTON HERE -->
-      <div class="card" style="background: hsl(var(--primary) / 0.1); border-color: hsl(var(--primary));">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <h3 style="margin: 0 0 5px 0;">Download Match Report</h3>
-            <p style="margin: 0; color: hsl(var(--text-secondary)); font-size: 14px;">
-              Save this analysis as a PDF document for your records
+  allShownTraits.forEach(traitName => {
+    const traitData = traitScores[traitName] || {};
+    const score = traitData.score || 3;
+    let scoreClass = 'medium';
+    if (score >= 4) scoreClass = 'high';
+    else if (score <= 2) scoreClass = 'low';
+    const required = selectedJobTraits[traitName];
+    const isDirectlyAssessed = traitData.directly_assessed || false;
+    const secondaryInference = traitData.secondary_inference || '';
+
+    html += `
+      <div class="dimension-card ${!isDirectlyAssessed ? 'inferred-trait' : ''}">
+        <div class="dimension-score">
+          <span class="dimension-name">
+            ${isDirectlyAssessed ? '🎯' : '⚠️'} ${traitName}
+          </span>
+          <span class="score-badge ${scoreClass}">${Number(score).toFixed(1)}/5</span>
+        </div>
+        <p style="font-size: 12px; color: hsl(var(--text-tertiary)); margin: 5px 0;">
+          Required: <strong>${required ? required.level.toUpperCase() : 'N/A'}</strong>
+          ${!isDirectlyAssessed ? ' • <span style="color: hsl(var(--warning));">INFERRED</span>' : ''}
+        </p>
+        <div class="likert-bar">
+          <div class="likert-fill" style="width: ${(score/5)*100}%;"></div>
+        </div>
+        <p style="font-size: 14px; color: hsl(var(--text-secondary)); margin-top: 10px;">
+          ${traitData.analysis || ''}
+        </p>
+        ${secondaryInference ? `
+          <div style="margin-top: 12px; padding: 10px; background: hsl(var(--secondary) / 0.05); border-left: 3px solid hsl(var(--secondary)); border-radius: 4px;">
+            <p style="font-size: 12px; color: hsl(var(--text-secondary)); margin: 0; font-style: italic;">
+              <strong>Inference Basis:</strong> ${secondaryInference}
             </p>
           </div>
-          <button id="downloadMatchBtn" class="btn btn-primary" style="white-space: nowrap;">
-            📄 Download PDF
-          </button>
-        </div>
-      </div>
-  
-      <div class="card">
-        <h3>Hiring Recommendation</h3>
-        <div class="recommendation-banner ${recClass}">${recText}</div>
-      </div>
-  
-      <div class="card">
-        <h3>Executive Summary</h3>
-        <p style="line-height: 1.8; white-space: pre-wrap;">${data.executive_summary || 'No summary available'}</p>
-      </div>
-  
-      <div class="card">
-        <h3>Trait-by-Trait Fit Analysis</h3>
-        <div class="dimension-grid">
-    `;
-  
-    const traitScores = data.trait_scores || {};
-    const allShownTraits = new Set([...Object.keys(selectedJobTraits), ...Object.keys(traitScores)]);
-    
-    allShownTraits.forEach(traitName => {
-      const traitData = traitScores[traitName] || {};
-      const score = traitData.score || 3;
-      let scoreClass = 'medium';
-      if (score >= 4) scoreClass = 'high';
-      else if (score <= 2) scoreClass = 'low';
-      const required = selectedJobTraits[traitName];
-  
-      html += `
-        <div class="dimension-card">
-          <div class="dimension-score">
-            <span class="dimension-name">${traitName}</span>
-            <span class="score-badge ${scoreClass}">${Number(score).toFixed(1)}/5</span>
-          </div>
-          <p style="font-size: 12px; color: hsl(var(--text-tertiary)); margin: 5px 0;">
-            Required: <strong>${required ? required.level.toUpperCase() : 'N/A'}</strong>
-          </p>
-          <div class="likert-bar">
-            <div class="likert-fill" style="width: ${(score/5)*100}%;"></div>
-          </div>
-          <p style="font-size: 14px; color: hsl(var(--text-secondary)); margin-top: 10px;">${traitData.analysis || ''}</p>
-        </div>
-      `;
-    });
-  
-    html += `</div></div>`;
-  
-    html += `
-      <div class="card">
-        <h3>Key Strengths</h3>
-        <ul class="evidence-list">
-          ${(data.key_strengths || []).map(s => `<li>${s}</li>`).join('') || '<li>No strengths identified.</li>'}
-        </ul>
-      </div>
-  
-      <div class="card">
-        <h3>Potential Concerns</h3>
-        <ul class="evidence-list concern-list">
-          ${(data.potential_concerns || []).map(s => `<li>${s}</li>`).join('') || '<li>No concerns identified.</li>'}
-        </ul>
-      </div>
-  
-      <div class="card">
-        <h3>Specific Evidence from Report</h3>
-        <ul class="evidence-list">
-          ${(data.specific_evidence || []).map(s => `<li>${s}</li>`).join('') || '<li>No specific evidence provided.</li>'}
-        </ul>
-      </div>
-  
-      <div class="card">
-        <h3>Risk Assessment</h3>
-        <p style="line-height:1.8; white-space: pre-wrap;">${data.risk_assessment || 'No risk assessment available'}</p>
-      </div>
-  
-      <div class="card">
-        <h3>Development Needs</h3>
-        <ul class="evidence-list">
-          ${(data.development_needs || []).map(d => `<li>${d}</li>`).join('') || '<li>No development needs identified.</li>'}
-        </ul>
-      </div>
-  
-      <div class="card">
-        <h3>Onboarding Recommendations</h3>
-        <p style="margin-bottom: 15px; color: hsl(var(--text-secondary));">
-          If this candidate is hired, consider these recommendations for optimal success:
-        </p>
-        <ul class="evidence-list">
-          ${(data.onboarding_recommendations || []).map(r => `<li>${r}</li>`).join('') || '<li>No onboarding recommendations provided.</li>'}
-        </ul>
+        ` : ''}
       </div>
     `;
+  });
+
+  html += `</div></div>`;
+
+  html += `
+    <div class="card">
+      <h3>Key Strengths</h3>
+      <ul class="evidence-list">
+        ${(data.key_strengths || []).map(s => `<li>${s}</li>`).join('') || '<li>No strengths identified.</li>'}
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Potential Concerns</h3>
+      <ul class="evidence-list concern-list">
+        ${(data.potential_concerns || []).map(s => `<li>${s}</li>`).join('') || '<li>No concerns identified.</li>'}
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Specific Evidence from Report</h3>
+      <ul class="evidence-list">
+        ${(data.specific_evidence || []).map(s => `<li>${s}</li>`).join('') || '<li>No specific evidence provided.</li>'}
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Risk Assessment</h3>
+      <p style="line-height:1.8; white-space: pre-wrap;">${data.risk_assessment || 'No risk assessment available'}</p>
+    </div>
+
+    <div class="card">
+      <h3>Development Needs</h3>
+      <ul class="evidence-list">
+        ${(data.development_needs || []).map(d => `<li>${d}</li>`).join('') || '<li>No development needs identified.</li>'}
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Onboarding Recommendations</h3>
+      <p style="margin-bottom: 15px; color: hsl(var(--text-secondary));">
+        If this candidate is hired, consider these recommendations for optimal success:
+      </p>
+      <ul class="evidence-list">
+        ${(data.onboarding_recommendations || []).map(r => `<li>${r}</li>`).join('') || '<li>No onboarding recommendations provided.</li>'}
+      </ul>
+    </div>
+  `;
+
+  resultsDiv.innerHTML = html;
   
-    resultsDiv.innerHTML = html;
-    
-    // Add download button event listener
-    const downloadBtn = document.getElementById('downloadMatchBtn');
-    if (downloadBtn) {
-      downloadBtn.addEventListener('click', downloadMatchReport);
-    }
+  // Add download button event listener
+  const downloadBtn = document.getElementById('downloadMatchBtn');
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', downloadMatchReport);
   }
-  
-  // ADD THIS NEW FUNCTION FOR DOWNLOADING THE REPORT
+}
+
+    
+  // DOWNLOAD FUNCTION
   async function downloadMatchReport() {
     const downloadBtn = document.getElementById('downloadMatchBtn');
     if (!downloadBtn || !currentMatchingResults) return;
