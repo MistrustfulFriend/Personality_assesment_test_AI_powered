@@ -791,6 +791,202 @@ def download_report():
         print(f"Error generating PDF: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+
+#!/usr/bin/env python3
+# ADD THIS ROUTE TO YOUR EXISTING app.py FILE
+
+@app.route('/match')
+def match_page():
+    """Serve the job matching page"""
+    return send_from_directory('public', 'match.html')
+
+@app.route('/api/match-candidate', methods=['POST'])
+def match_candidate():
+    """Compare candidate report against job requirements using AI"""
+    try:
+        # Check if files were uploaded
+        if 'candidate_report' not in request.files or 'job_requirements' not in request.files:
+            return jsonify({'error': 'Both candidate report and job requirements PDFs are required'}), 400
+        
+        candidate_file = request.files['candidate_report']
+        job_file = request.files['job_requirements']
+        
+        # Validate file types
+        if not candidate_file.filename.endswith('.pdf') or not job_file.filename.endswith('.pdf'):
+            return jsonify({'error': 'Both files must be PDF format'}), 400
+        
+        print("\n" + "="*80)
+        print("JOB MATCHING REQUEST RECEIVED")
+        print("="*80)
+        print(f"Candidate Report: {candidate_file.filename}")
+        print(f"Job Requirements: {job_file.filename}")
+        
+        # Extract text from PDFs
+        candidate_text = extract_text_from_pdf(candidate_file)
+        job_text = extract_text_from_pdf(job_file)
+        
+        if not candidate_text or not job_text:
+            return jsonify({'error': 'Could not extract text from one or both PDFs'}), 400
+        
+        print(f"\nExtracted candidate text: {len(candidate_text)} characters")
+        print(f"Extracted job requirements text: {len(job_text)} characters")
+        print("-"*80 + "\n")
+        
+        # Generate AI matching analysis
+        matching_analysis = generate_matching_analysis(candidate_text, job_text)
+        
+        print("\nMATCHING ANALYSIS COMPLETE")
+        print("="*80 + "\n")
+        
+        return jsonify(matching_analysis)
+        
+    except Exception as e:
+        print(f"Error in match-candidate: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+def extract_text_from_pdf(pdf_file):
+    """Extract text content from PDF file"""
+    try:
+        from PyPDF2 import PdfReader
+        import io
+        
+        # Read PDF from file object
+        pdf_bytes = pdf_file.read()
+        pdf_stream = io.BytesIO(pdf_bytes)
+        
+        reader = PdfReader(pdf_stream)
+        text = ""
+        
+        for page in reader.pages:
+            text += page.extract_text() + "\n"
+        
+        return text.strip()
+        
+    except Exception as e:
+        print(f"Error extracting PDF text: {str(e)}")
+        return None
+
+
+def generate_matching_analysis(candidate_text, job_text):
+    """Use GPT to analyze candidate-job fit"""
+    
+    # Build comprehensive prompt
+    prompt = f"""You are an expert HR analyst and organizational psychologist. Your task is to analyze how well a candidate's personality assessment matches the requirements of a specific job role.
+
+CANDIDATE'S PERSONALITY ASSESSMENT REPORT:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{candidate_text[:8000]}  
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+JOB REQUIREMENTS & ROLE DESCRIPTION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{job_text[:4000]}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ANALYSIS TASK:
+
+1. OVERALL FIT SCORE (1-5 Likert scale):
+   Rate the overall candidate-role alignment where:
+   1 = Poor Fit (major misalignment)
+   2 = Below Average Fit (significant concerns)
+   3 = Adequate Fit (acceptable with development)
+   4 = Good Fit (strong alignment)
+   5 = Excellent Fit (exceptional match)
+
+2. DIMENSIONAL ANALYSIS:
+   Analyze fit across these 6 key dimensions (each rated 1-5):
+   
+   a) PERSONALITY ALIGNMENT: How well do their personality traits match the role requirements?
+   b) BEHAVIORAL COMPATIBILITY: How well do their behavioral patterns fit the work environment?
+   c) DECISION-MAKING FIT: Does their decision-making style match what the role demands?
+   d) INTERPERSONAL MATCH: Do their social/collaborative tendencies align with team dynamics?
+   e) ADAPTABILITY MATCH: Does their flexibility level suit the role's variability?
+   f) VALUES ALIGNMENT: Do their demonstrated values match organizational culture?
+
+3. DETAILED ANALYSIS (4-6 paragraphs):
+   - KEY STRENGTHS: What makes this candidate particularly suitable for this role?
+   - POTENTIAL CONCERNS: What aspects might create challenges?
+   - DEVELOPMENT NEEDS: What areas would need development or support?
+   - HIRING RECOMMENDATION: Clear recommendation with rationale
+
+4. SPECIFIC EVIDENCE:
+   Reference specific traits, scores, or behavioral patterns from the candidate's report that support your analysis.
+
+5. RISK ASSESSMENT:
+   Identify any red flags or significant mismatches that should concern hiring managers.
+
+6. ONBOARDING RECOMMENDATIONS:
+   If hired, what specific support or accommodations would optimize their success?
+
+Format your response as JSON with this structure:
+{{
+  "overall_fit_score": <1-5>,
+  "overall_fit_label": "<Poor Fit|Below Average|Adequate|Good Fit|Excellent Fit>",
+  "dimensional_scores": {{
+    "personality_alignment": {{"score": <1-5>, "justification": "text"}},
+    "behavioral_compatibility": {{"score": <1-5>, "justification": "text"}},
+    "decision_making_fit": {{"score": <1-5>, "justification": "text"}},
+    "interpersonal_match": {{"score": <1-5>, "justification": "text"}},
+    "adaptability_match": {{"score": <1-5>, "justification": "text"}},
+    "values_alignment": {{"score": <1-5>, "justification": "text"}}
+  }},
+  "key_strengths": ["strength 1", "strength 2", "strength 3"],
+  "potential_concerns": ["concern 1", "concern 2"],
+  "development_needs": ["need 1", "need 2", "need 3"],
+  "specific_evidence": ["evidence 1", "evidence 2", "evidence 3"],
+  "risk_assessment": "text",
+  "hiring_recommendation": "text (clear recommendation: Strongly Recommend, Recommend, Recommend with Reservations, Do Not Recommend)",
+  "onboarding_recommendations": ["recommendation 1", "recommendation 2", "recommendation 3"],
+  "executive_summary": "2-3 paragraph summary of the entire analysis"
+}}
+
+CRITICAL: Base your analysis on SPECIFIC information from both documents. Quote or reference actual traits, scores, and requirements. Be concrete and evidence-based."""
+
+    print("\nGPT PROMPT FOR JOB MATCHING:")
+    print("-"*80)
+    print(prompt[:500] + "..." if len(prompt) > 500 else prompt)
+    print("-"*80 + "\n")
+    
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are an expert HR analyst and organizational psychologist. Provide detailed, evidence-based analysis of candidate-job fit. Use specific examples from both documents. Respond only with valid JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=3000
+        )
+        
+        content = response.choices[0].message.content or "{}"
+        
+        print("GPT RESPONSE FOR JOB MATCHING:")
+        print("-"*80)
+        print(content[:500] + "..." if len(content) > 500 else content)
+        print("-"*80 + "\n")
+        
+        # Clean up markdown if present
+        if '```json' in content:
+            content = content.split('```json')[1].split('```')[0].strip()
+        elif '```' in content:
+            content = content.split('```')[1].split('```')[0].strip()
+        
+        analysis = json.loads(content)
+        return analysis
+        
+    except Exception as e:
+        print(f"GPT Error for job matching: {str(e)}")
+        return {
+            'error': 'Failed to generate matching analysis',
+            'overall_fit_score': 3,
+            'overall_fit_label': 'Unable to analyze',
+            'executive_summary': 'Analysis could not be completed due to a technical error.'
+        }
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
