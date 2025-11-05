@@ -902,6 +902,7 @@ def generate_matching_analysis_from_traits(candidate_text, job_requirements, ass
         requirements_summary += f"   Description: {description}\n\n"
     
     # Build comprehensive prompt
+# Build comprehensive prompt
     prompt = f"""You are an expert HR analyst and organizational psychologist. Your task is to analyze how well a candidate's personality assessment matches specific trait requirements for a job role.
 
 CANDIDATE'S PERSONALITY ASSESSMENT REPORT:
@@ -911,84 +912,99 @@ CANDIDATE'S PERSONALITY ASSESSMENT REPORT:
 
 {requirements_summary}
 
-IMPORTANT CONTEXT:
-The candidate was DIRECTLY ASSESSED on these {len(directly_assessed)} traits: {', '.join(directly_assessed) if directly_assessed else 'NONE'}
+CRITICAL CONTEXT:
+- The candidate was DIRECTLY ASSESSED on: {', '.join(directly_assessed) if directly_assessed else 'NONE OF THE REQUIRED TRAITS'}
+- The candidate was NOT assessed on: {', '.join(not_assessed) if not_assessed else 'ALL TRAITS WERE ASSESSED'}
 
-The candidate was NOT directly assessed on these {len(not_assessed)} traits: {', '.join(not_assessed) if not_assessed else 'NONE'}
+ABSOLUTELY CRITICAL RULES FOR NON-ASSESSED TRAITS:
+
+1. NEVER frame lack of assessment as a weakness, concern, or red flag
+2. NEVER say things like:
+   - absence of assessment raises concerns
+   - lack of data suggests deficiency
+   - inability to confirm this trait is problematic
+   - missing assessment indicates risk
+
+3. INSTEAD, use neutral, exploratory language:
+   - This trait was not directly assessed. Based on [other trait], they may demonstrate [trait] through [specific approach]. Direct assessment would be needed to confirm.
+   - While not directly measured, their [assessed behavior] suggests potential for [trait], though this remains to be validated.
+   - Cannot be conclusively determined from available data. Recommend supplementary assessment if this trait is critical.
+
+4. For non-assessed traits, DEFAULT TO NEUTRAL (score: 3) unless there is STRONG positive evidence from assessed traits that clearly suggests higher capability
+
+5. Make your hiring recommendation based PRIMARILY on directly assessed traits. Non-assessed traits should be noted as "requiring further evaluation" rather than counted against the candidate
 
 ANALYSIS TASK:
 
-You must analyze the candidate against EACH of the {len(job_requirements)} required traits individually.
+SECTION 1: DIRECTLY ASSESSED TRAITS {len(directly_assessed)} traits)
+For each directly assessed trait, provide detailed analysis with specific evidence from the report.
 
-FOR DIRECTLY ASSESSED TRAITS (✓):
-- Base your analysis SOLELY on the specific trait assessment from the report
-- Use the candidate's actual scores, patterns, and behavioral examples for that trait
-- Provide evidence-based scoring (1-5 Likert scale)
-
-FOR NON-ASSESSED TRAITS (⚠):
-- Clearly state "NOT DIRECTLY ASSESSED" at the start of the analysis
-- Make reasonable inferences from OTHER traits and behaviors in the report
-- Provide a SECONDARY INFERENCE section explaining what evidence you're using
-- Be more conservative in scoring (default to 3 unless strong evidence suggests otherwise)
-- Example format: "NOT DIRECTLY ASSESSED. However, based on their [specific trait X] showing [specific behavior], we can infer..."
+SECTION 2: NON-ASSESSED TRAITS ({len(not_assessed)} traits) 
+For traits that were NOT assessed, use this format:
+- Score: Default to 3 (neutral) unless strong positive evidence suggests otherwise
+- Analysis: NOT DIRECTLY ASSESSED. Based on their [specific assessed trait showing specific behavior], they may approach [non-assessed trait] by [neutral interpretation]. However, this trait was not directly measured and would require specific assessment to evaluate accurately.
+- Secondary Inference: Explain what indirect evidence you are using, WITHOUT framing absence as negative
 
 SCORING SCALE (1-5 Likert):
-1 = Major mismatch (candidate shows opposite tendency)
-2 = Below requirements (candidate is deficient in this trait)
-3 = Meets minimum requirements (acceptable but not ideal) - USE FOR NON-ASSESSED IF UNCLEAR
-4 = Exceeds requirements (strong match)
-5 = Exceptional match (perfect alignment)
+1 = Clear evidence of OPPOSITE tendency (use ONLY for directly assessed traits with clear negative evidence)
+2 = Below requirements (use ONLY for directly assessed traits with clear evidence)
+3 = NEUTRAL/UNKNOWN (DEFAULT for ALL non-assessed traits unless strong positive evidence)
+4 = Exceeds requirements (requires clear direct evidence)
+5 = Exceptional match (requires very clear direct evidence)
 
 ANALYSIS SECTIONS REQUIRED:
 
-1. TRAIT-BY-TRAIT ANALYSIS - For EACH required trait provide:
+1. TRAIT-BY-TRAIT ANALYSIS - For EACH required trait:
    - Fit score (1-5)
-   - Whether it was directly assessed (true/false)
-   - Primary analysis (2-3 sentences with specific evidence)
-   - If NOT assessed: secondary_inference field (2-3 sentences explaining what OTHER evidence you're using)
+   - Whether directly assessed (true/false)
+   - Primary analysis (evidence-based for assessed; neutral inference for non-assessed)
+   - If NOT assessed: secondary_inference explaining indirect indicators WITHOUT negative framing
 
-2. OVERALL FIT SCORE (1-5): Weighted average, but weight directly assessed traits more heavily
+2. OVERALL FIT SCORE (1-5): 
+   - Base this PRIMARILY on directly assessed traits
+   - Weight directly assessed traits at 80%, non-assessed at 20%
+   - Non-assessed traits should NOT lower the score unless there is positive evidence they could raise it
 
-3. DETAILED SECTIONS:
-   - KEY STRENGTHS (3-5 items): Focus on directly assessed strengths
-   - POTENTIAL CONCERNS (2-4 items): Note which concerns are based on inference vs direct assessment
-   - DEVELOPMENT NEEDS (3-5 items)
-   - SPECIFIC EVIDENCE (4-6 direct quotes/references from report)
-   - ASSESSMENT COVERAGE NOTE: Explain which traits were assessed vs inferred
-   - RISK ASSESSMENT (2-3 paragraphs): Include discussion of assessment gaps
-   - HIRING RECOMMENDATION (Clear decision with rationale)
-   - ONBOARDING RECOMMENDATIONS (3-5 items)
-   - EXECUTIVE SUMMARY (3-4 paragraphs)
+3. ASSESSMENT COVERAGE: Clearly state {len(directly_assessed)} of {len(job_requirements)} required traits were directly assessed. The remaining {len(not_assessed)} traits are inferred and should not be weighted heavily in hiring decisions without supplementary assessment.
 
-CRITICAL REQUIREMENTS:
-- NEVER claim direct assessment evidence for non-assessed traits
-- Always distinguish between direct assessment and inference
-- Be transparent about assessment gaps
-- Use specific quotes and examples for directly assessed traits
-- For inferred traits, explain the logical basis clearly
+4. HIRING RECOMMENDATION: 
+   - Focus on directly assessed traits
+   - For non-assessed critical traits, state: "Recommend supplementary assessment of [traits] before final decision" rather than counting absence as negative
+   - DO NOT penalize candidate for traits they were not asked about
+
+5. KEY STRENGTHS: Focus on directly assessed positive traits
+
+6. POTENTIAL CONCERNS: Only list concerns from DIRECTLY ASSESSED traits. For non-assessed traits, use "Areas requiring further evaluation" instead of "concerns"
+
+7. RISK ASSESSMENT: Frame non-assessed traits as "incomplete data requiring further evaluation" NOT as risks or red flags
+
+8. EXECUTIVE SUMMARY: Lead with directly assessed traits. Mention non-assessed traits as "requiring supplementary evaluation" not as weaknesses.
+
+REMEMBER: A candidate cannot be penalized for traits they were never asked about. Absence of data does not equal absence of capability.
 
 Format as JSON:
 {{
   "overall_fit_score": <1-5>,
-  "overall_fit_label": "<Poor Fit|Below Average|Adequate|Good Fit|Excellent Fit>",
+  "overall_fit_label": <Poor Fit|Below Average|Adequate|Good Fit|Excellent Fit>,
   "trait_scores": {{
     "<trait_name>": {{
       "score": <1-5>,
       "required_level": "<low|medium|high>",
       "directly_assessed": <true|false>,
-      "analysis": "2-3 sentence analysis with specific evidence",
-      "secondary_inference": "If not directly assessed: explain what OTHER evidence supports this score"
+      "analysis": "For assessed: evidence-based. For non-assessed: neutral inference without negative framing",
+      "secondary_inference": "If not assessed: neutral explanation of indirect evidence"
     }}
   }},
-  "key_strengths": ["strength 1", "strength 2", ...],
-  "potential_concerns": ["concern 1", "concern 2", ...],
-  "development_needs": ["need 1", "need 2", ...],
-  "specific_evidence": ["evidence 1 with quote", "evidence 2", ...],
-  "assessment_coverage": "Paragraph explaining which traits were directly assessed vs inferred",
-  "risk_assessment": "2-3 paragraphs including discussion of assessment gaps",
-  "hiring_recommendation": "Clear recommendation with rationale",
-  "onboarding_recommendations": ["rec 1", "rec 2", ...],
-  "executive_summary": "3-4 paragraphs"
+  "key_strengths": ["Focus on directly assessed positive traits"],
+  "potential_concerns": ["Only from directly assessed traits"],
+  "areas_requiring_evaluation": ["List non-assessed traits here, NOT in concerns"],
+  "development_needs": ["Based on actual assessed behaviors"],
+  "specific_evidence": ["Quote directly assessed behaviors only"],
+  "assessment_coverage": "X of Y traits directly assessed. Remaining traits are inferred and require supplementary evaluation for conclusive assessment.",
+  "risk_assessment": "Frame non-assessed traits as data gaps, not risks",
+  "hiring_recommendation": "Base on directly assessed traits. Note non-assessed traits need evaluation, not that they are concerns",
+  "onboarding_recommendations": ["Based on assessed traits"],
+  "executive_summary": "Lead with assessed traits, note non-assessed neutrally"
 }}
 
 Required traits to analyze: {', '.join(job_requirements.keys())}"""
