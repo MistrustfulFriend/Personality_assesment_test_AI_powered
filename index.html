@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personality Assessment | Evidence-Based Behavioral Analysis</title>
+  <meta name="description" content="Professional personality assessment using scenario-based questions and GPT-powered analysis. Evidence-based insights for career development and self-awareness.">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header class="main-header">
+      <h1>Personality Assessment</h1>
+      <p class="subtitle">Evidence-based behavioral analysis for professional development</p>
+    </header>
+
+    <div id="traitSelection" class="section">
+      <div class="section-header">
+        <h2>Select Traits to Assess</h2>
+        <p class="section-description">Choose which personality traits you'd like to evaluate. Each trait consists of 3 scenario-based questions plus 1 self-perception question.</p>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="info-content">
+            <div class="info-label">Assessment Method</div>
+            <div class="info-value">Scenario-based questions with AI-powered analysis</div>
+          </div>
+        </div>
+        <div class="info-card">
+          <div class="info-content">
+            <div class="info-label">Time Estimate</div>
+            <div class="info-value" id="timeEstimate">Select traits to see estimate</div>
+          </div>
+        </div>
+        <div class="info-card">
+          <div class="info-content">
+            <div class="info-label">Privacy</div>
+            <div class="info-value">Secure analysis with OpenAI GPT</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="trait-selection-grid" id="traitCheckboxes"></div>
+
+      <div class="action-group">
+        <button id="startBtn" class="btn btn-primary" data-testid="button-start-assessment">Start Assessment</button>
+        <button id="privacyBtn" class="btn btn-link" data-testid="button-privacy">Privacy Policy</button>
+      </div>
+    </div>
+
+    <div id="assessment" style="display:none;"></div>
+
+    <div id="assessmentButtons" style="display:none;" class="action-group sticky-actions">
+      <button id="calculateBtn" class="btn btn-primary" disabled data-testid="button-calculate">Calculate Results</button>
+      <button id="changeTraitsBtn" class="btn btn-secondary" data-testid="button-change-traits">Change Selected Traits</button>
+      <button id="downloadBtn" class="btn btn-success" style="display:none;" data-testid="button-download">Download Report</button>
+    </div>
+
+    <div id="results"></div>
+  </div>
+
+  <div id="privacyModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Privacy Policy</h2>
+        <span class="close">&times;</span>
+      </div>
+      <div class="modal-body">
+        <h3>Data Processing & AI Analysis</h3>
+        <p>This personality assessment tool uses advanced AI to provide deeper insights:</p>
+        <ul>
+          <li><strong>AI-Powered Analysis:</strong> Your responses are analyzed using OpenAI's GPT technology to generate personalized, nuanced interpretations.</li>
+          <li><strong>Secure Processing:</strong> Data is transmitted securely to OpenAI's API for analysis. OpenAI does not use API data to train their models.</li>
+          <li><strong>No Long-term Storage:</strong> We do not store your assessment data after processing. Results are generated and delivered immediately.</li>
+          <li><strong>Complete Control:</strong> Your assessment results are shown directly to you. You can download them or close the browser at any time.</li>
+        </ul>
+
+        <h3>How It Works</h3>
+        <p>When you complete the assessment:</p>
+        <ol>
+          <li>Your responses are collected and processed in your browser</li>
+          <li>The data is securely sent to our server for AI analysis</li>
+          <li>OpenAI's GPT generates personalized interpretations</li>
+          <li>Results are displayed to you immediately</li>
+          <li>No data is retained after the session</li>
+        </ol>
+
+        <h3>Optional Report Download</h3>
+        <p>If you choose to download your assessment report, a PDF is generated containing your results. This file is created for you to keep privately.</p>
+
+        <h3>No Account Required</h3>
+        <p>This tool requires no registration or login. Your session is anonymous.</p>
+
+        <h3>Questions?</h3>
+        <p>If you have concerns about privacy or data handling, please review OpenAI's privacy policy for information about their data practices.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/traitData.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
