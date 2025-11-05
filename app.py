@@ -800,40 +800,50 @@ def match_page():
     """Serve the job matching page"""
     return send_from_directory('public', 'match.html')
 
+#!/usr/bin/env python3
+# REPLACE THE PREVIOUS /api/match-candidate ROUTE WITH THIS VERSION
+
 @app.route('/api/match-candidate', methods=['POST'])
 def match_candidate():
-    """Compare candidate report against job requirements using AI"""
+    """Compare candidate report against selected job trait requirements using AI"""
     try:
-        # Check if files were uploaded
-        if 'candidate_report' not in request.files or 'job_requirements' not in request.files:
-            return jsonify({'error': 'Both candidate report and job requirements PDFs are required'}), 400
+        # Check if candidate report was uploaded
+        if 'candidate_report' not in request.files:
+            return jsonify({'error': 'Candidate report PDF is required'}), 400
         
         candidate_file = request.files['candidate_report']
-        job_file = request.files['job_requirements']
         
-        # Validate file types
-        if not candidate_file.filename.endswith('.pdf') or not job_file.filename.endswith('.pdf'):
-            return jsonify({'error': 'Both files must be PDF format'}), 400
+        # Get job requirements (now as JSON from form data)
+        job_requirements_json = request.form.get('job_requirements')
+        if not job_requirements_json:
+            return jsonify({'error': 'Job requirements are required'}), 400
+        
+        # Validate file type
+        if not candidate_file.filename.endswith('.pdf'):
+            return jsonify({'error': 'Candidate report must be PDF format'}), 400
         
         print("\n" + "="*80)
-        print("JOB MATCHING REQUEST RECEIVED")
+        print("JOB MATCHING REQUEST RECEIVED - TRAIT SELECTION MODE")
         print("="*80)
         print(f"Candidate Report: {candidate_file.filename}")
-        print(f"Job Requirements: {job_file.filename}")
         
-        # Extract text from PDFs
+        # Parse job requirements
+        job_requirements = json.loads(job_requirements_json)
+        print(f"\nJob Requirements ({len(job_requirements)} traits selected):")
+        for trait_name, trait_data in job_requirements.items():
+            print(f"  - {trait_name}: {trait_data['level'].upper()}")
+        
+        # Extract text from candidate PDF
         candidate_text = extract_text_from_pdf(candidate_file)
-        job_text = extract_text_from_pdf(job_file)
         
-        if not candidate_text or not job_text:
-            return jsonify({'error': 'Could not extract text from one or both PDFs'}), 400
+        if not candidate_text:
+            return jsonify({'error': 'Could not extract text from candidate PDF'}), 400
         
         print(f"\nExtracted candidate text: {len(candidate_text)} characters")
-        print(f"Extracted job requirements text: {len(job_text)} characters")
         print("-"*80 + "\n")
         
         # Generate AI matching analysis
-        matching_analysis = generate_matching_analysis(candidate_text, job_text)
+        matching_analysis = generate_matching_analysis_from_traits(candidate_text, job_requirements)
         
         print("\nMATCHING ANALYSIS COMPLETE")
         print("="*80 + "\n")
@@ -847,118 +857,105 @@ def match_candidate():
         return jsonify({'error': str(e)}), 500
 
 
-def extract_text_from_pdf(pdf_file):
-    """Extract text content from PDF file"""
-    try:
-        from PyPDF2 import PdfReader
-        import io
-        
-        # Read PDF from file object
-        pdf_bytes = pdf_file.read()
-        pdf_stream = io.BytesIO(pdf_bytes)
-        
-        reader = PdfReader(pdf_stream)
-        text = ""
-        
-        for page in reader.pages:
-            text += page.extract_text() + "\n"
-        
-        return text.strip()
-        
-    except Exception as e:
-        print(f"Error extracting PDF text: {str(e)}")
-        return None
-
-
-def generate_matching_analysis(candidate_text, job_text):
-    """Use GPT to analyze candidate-job fit"""
+def generate_matching_analysis_from_traits(candidate_text, job_requirements):
+    """Use GPT to analyze candidate-job fit based on specific trait requirements"""
+    
+    # Build requirements summary
+    requirements_summary = "REQUIRED TRAIT PROFILE FOR THE ROLE:\n"
+    requirements_summary += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+    
+    for trait_name, trait_data in job_requirements.items():
+        level = trait_data['level'].upper()
+        description = trait_data['description']
+        requirements_summary += f"**{trait_name}** (Required Level: {level})\n"
+        requirements_summary += f"   Description: {description}\n\n"
     
     # Build comprehensive prompt
-    prompt = f"""You are an expert HR analyst and organizational psychologist. Your task is to analyze how well a candidate's personality assessment matches the requirements of a specific job role.
+    prompt = f"""You are an expert HR analyst and organizational psychologist. Your task is to analyze how well a candidate's personality assessment matches specific trait requirements for a job role.
 
 CANDIDATE'S PERSONALITY ASSESSMENT REPORT:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {candidate_text[:8000]}  
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-JOB REQUIREMENTS & ROLE DESCRIPTION:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-{job_text[:4000]}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{requirements_summary}
 
 ANALYSIS TASK:
 
-1. OVERALL FIT SCORE (1-5 Likert scale):
-   Rate the overall candidate-role alignment where:
-   1 = Poor Fit (major misalignment)
-   2 = Below Average Fit (significant concerns)
-   3 = Adequate Fit (acceptable with development)
-   4 = Good Fit (strong alignment)
-   5 = Excellent Fit (exceptional match)
+You must analyze the candidate against EACH of the {len(job_requirements)} required traits individually, then provide an overall assessment.
 
-2. DIMENSIONAL ANALYSIS:
-   Analyze fit across these 6 key dimensions (each rated 1-5):
-   
-   a) PERSONALITY ALIGNMENT: How well do their personality traits match the role requirements?
-   b) BEHAVIORAL COMPATIBILITY: How well do their behavioral patterns fit the work environment?
-   c) DECISION-MAKING FIT: Does their decision-making style match what the role demands?
-   d) INTERPERSONAL MATCH: Do their social/collaborative tendencies align with team dynamics?
-   e) ADAPTABILITY MATCH: Does their flexibility level suit the role's variability?
-   f) VALUES ALIGNMENT: Do their demonstrated values match organizational culture?
+1. TRAIT-BY-TRAIT ANALYSIS:
+   For EACH required trait, provide:
+   - A fit score (1-5 Likert scale) where:
+     * 1 = Major mismatch (candidate shows opposite tendency)
+     * 2 = Below requirements (candidate is deficient in this trait)
+     * 3 = Meets minimum requirements (acceptable but not ideal)
+     * 4 = Exceeds requirements (strong match)
+     * 5 = Exceptional match (perfect alignment)
+   - A 2-3 sentence analysis explaining the score based on SPECIFIC evidence from the candidate's report
 
-3. DETAILED ANALYSIS (4-6 paragraphs):
-   - KEY STRENGTHS: What makes this candidate particularly suitable for this role?
-   - POTENTIAL CONCERNS: What aspects might create challenges?
-   - DEVELOPMENT NEEDS: What areas would need development or support?
-   - HIRING RECOMMENDATION: Clear recommendation with rationale
+2. OVERALL FIT SCORE (1-5 Likert scale):
+   Calculate the weighted average of all trait scores to determine overall fit:
+   1 = Poor Fit (major misalignment across multiple traits)
+   2 = Below Average Fit (significant concerns in key areas)
+   3 = Adequate Fit (meets minimum requirements, development needed)
+   4 = Good Fit (strong alignment across most traits)
+   5 = Excellent Fit (exceptional match on critical traits)
 
-4. SPECIFIC EVIDENCE:
-   Reference specific traits, scores, or behavioral patterns from the candidate's report that support your analysis.
+3. DETAILED ANALYSIS SECTIONS:
+   - KEY STRENGTHS: List 3-5 specific traits where the candidate excels relative to requirements
+   - POTENTIAL CONCERNS: List 2-4 specific traits where there are gaps or mismatches
+   - DEVELOPMENT NEEDS: List 3-5 specific areas requiring growth or support
+   - SPECIFIC EVIDENCE: List 4-6 direct quotes or references from the candidate's report
+   - RISK ASSESSMENT: 2-3 paragraphs on potential risks of hiring this candidate
+   - HIRING RECOMMENDATION: Clear decision (Strongly Recommend / Recommend / Recommend with Reservations / Do Not Recommend) with 2-3 sentence rationale
+   - ONBOARDING RECOMMENDATIONS: List 3-5 specific strategies to maximize this candidate's success
+   - EXECUTIVE SUMMARY: 3-4 paragraph comprehensive overview
 
-5. RISK ASSESSMENT:
-   Identify any red flags or significant mismatches that should concern hiring managers.
+CRITICAL REQUIREMENTS:
+- Base ALL scores on SPECIFIC evidence from the candidate's actual report
+- Compare the candidate's demonstrated behaviors against each required trait
+- Consider both the level (Low/Medium/High) and the presence of the trait
+- Reference actual scores, patterns, or behavioral examples from the report
+- Be concrete and evidence-based, not generic
 
-6. ONBOARDING RECOMMENDATIONS:
-   If hired, what specific support or accommodations would optimize their success?
-
-Format your response as JSON with this structure:
+Format your response as JSON with this exact structure:
 {{
   "overall_fit_score": <1-5>,
   "overall_fit_label": "<Poor Fit|Below Average|Adequate|Good Fit|Excellent Fit>",
-  "dimensional_scores": {{
-    "personality_alignment": {{"score": <1-5>, "justification": "text"}},
-    "behavioral_compatibility": {{"score": <1-5>, "justification": "text"}},
-    "decision_making_fit": {{"score": <1-5>, "justification": "text"}},
-    "interpersonal_match": {{"score": <1-5>, "justification": "text"}},
-    "adaptability_match": {{"score": <1-5>, "justification": "text"}},
-    "values_alignment": {{"score": <1-5>, "justification": "text"}}
+  "trait_scores": {{
+    "<trait_name>": {{
+      "score": <1-5>,
+      "required_level": "<low|medium|high>",
+      "analysis": "2-3 sentence analysis with specific evidence"
+    }}
   }},
-  "key_strengths": ["strength 1", "strength 2", "strength 3"],
-  "potential_concerns": ["concern 1", "concern 2"],
-  "development_needs": ["need 1", "need 2", "need 3"],
-  "specific_evidence": ["evidence 1", "evidence 2", "evidence 3"],
-  "risk_assessment": "text",
-  "hiring_recommendation": "text (clear recommendation: Strongly Recommend, Recommend, Recommend with Reservations, Do Not Recommend)",
-  "onboarding_recommendations": ["recommendation 1", "recommendation 2", "recommendation 3"],
-  "executive_summary": "2-3 paragraph summary of the entire analysis"
+  "key_strengths": ["strength 1", "strength 2", "strength 3", ...],
+  "potential_concerns": ["concern 1", "concern 2", ...],
+  "development_needs": ["need 1", "need 2", "need 3", ...],
+  "specific_evidence": ["evidence 1 with specific quote or reference", "evidence 2", ...],
+  "risk_assessment": "2-3 paragraph assessment",
+  "hiring_recommendation": "Clear recommendation with rationale",
+  "onboarding_recommendations": ["recommendation 1", "recommendation 2", ...],
+  "executive_summary": "3-4 paragraph comprehensive summary"
 }}
 
-CRITICAL: Base your analysis on SPECIFIC information from both documents. Quote or reference actual traits, scores, and requirements. Be concrete and evidence-based."""
+Include a trait_scores entry for EVERY required trait: {', '.join(job_requirements.keys())}"""
 
-    print("\nGPT PROMPT FOR JOB MATCHING:")
+    print("\nGPT PROMPT FOR JOB MATCHING (TRAIT MODE):")
     print("-"*80)
-    print(prompt[:500] + "..." if len(prompt) > 500 else prompt)
+    print(prompt[:800] + "..." if len(prompt) > 800 else prompt)
     print("-"*80 + "\n")
     
     try:
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are an expert HR analyst and organizational psychologist. Provide detailed, evidence-based analysis of candidate-job fit. Use specific examples from both documents. Respond only with valid JSON."},
+                {"role": "system", "content": "You are an expert HR analyst and organizational psychologist. Provide detailed, evidence-based analysis of candidate-job fit. Use specific examples from the candidate's report. Score each required trait individually. Respond only with valid JSON."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.7,
-            max_tokens=3000
+            max_tokens=4000
         )
         
         content = response.choices[0].message.content or "{}"
@@ -975,15 +972,46 @@ CRITICAL: Base your analysis on SPECIFIC information from both documents. Quote 
             content = content.split('```')[1].split('```')[0].strip()
         
         analysis = json.loads(content)
+        
+        # Ensure all required traits have scores
+        if 'trait_scores' not in analysis:
+            analysis['trait_scores'] = {}
+        
+        for trait_name, trait_data in job_requirements.items():
+            if trait_name not in analysis['trait_scores']:
+                analysis['trait_scores'][trait_name] = {
+                    'score': 3,
+                    'required_level': trait_data['level'],
+                    'analysis': 'Insufficient information to assess this trait.'
+                }
+        
         return analysis
         
     except Exception as e:
         print(f"GPT Error for job matching: {str(e)}")
+        
+        # Fallback response
+        fallback_trait_scores = {}
+        for trait_name, trait_data in job_requirements.items():
+            fallback_trait_scores[trait_name] = {
+                'score': 3,
+                'required_level': trait_data['level'],
+                'analysis': 'Analysis could not be completed due to a technical error.'
+            }
+        
         return {
-            'error': 'Failed to generate matching analysis',
+            'error': 'Partial analysis - GPT error occurred',
             'overall_fit_score': 3,
-            'overall_fit_label': 'Unable to analyze',
-            'executive_summary': 'Analysis could not be completed due to a technical error.'
+            'overall_fit_label': 'Unable to fully analyze',
+            'trait_scores': fallback_trait_scores,
+            'key_strengths': ['Analysis incomplete'],
+            'potential_concerns': ['Technical error prevented full analysis'],
+            'development_needs': ['Unable to assess'],
+            'specific_evidence': ['Error occurred during analysis'],
+            'risk_assessment': 'Analysis could not be completed due to a technical error.',
+            'hiring_recommendation': 'Unable to provide recommendation - please retry analysis',
+            'onboarding_recommendations': ['Retry analysis for recommendations'],
+            'executive_summary': 'Analysis could not be completed due to a technical error. Please try again.'
         }
 
 
