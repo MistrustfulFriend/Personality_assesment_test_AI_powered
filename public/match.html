@@ -5,41 +5,24 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Candidate-Job Matching | Personality Assessment</title>
 
-  <!-- Full original stylesheet (preserved) -->
   <style>
 :root {
-  /* Elegant Pastel Color Palette */
   --primary: 160 45% 65%;
   --primary-dark: 160 45% 55%;
   --primary-light: 160 45% 75%;
-  
   --background: 30 20% 96%;
   --surface: 0 0% 99%;
   --surface-elevated: 30 15% 94%;
-  --card-bg: 30 20% 97%;
-  
   --text-primary: 210 15% 25%;
   --text-secondary: 210 10% 45%;
   --text-tertiary: 210 8% 65%;
-  
   --border: 30 10% 88%;
-  --border-dark: 30 12% 80%;
-  
   --success: 140 40% 60%;
   --warning: 35 60% 70%;
   --danger: 0 50% 70%;
   --info: 200 45% 65%;
-  
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06);
-  --shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 4px 12px 0 rgba(0, 0, 0, 0.10);
-  --shadow-xl: 0 8px 24px 0 rgba(0, 0, 0, 0.12);
-  
   --radius: 12px;
-  --radius-sm: 8px;
   --radius-lg: 16px;
-  
-  --spacing-xs: 8px;
   --spacing-sm: 12px;
   --spacing-md: 16px;
   --spacing-lg: 24px;
@@ -47,20 +30,14 @@
   --spacing-2xl: 48px;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: hsl(var(--background));
   color: hsl(var(--text-primary));
   line-height: 1.6;
   font-size: 15px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 .container {
@@ -74,214 +51,242 @@ body {
   margin-bottom: var(--spacing-2xl);
   padding-bottom: var(--spacing-xl);
   border-bottom: 2px solid hsl(var(--primary) / 0.2);
-  position: relative;
-}
-
-.main-header::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100px;
-  height: 2px;
-  background: hsl(var(--primary));
 }
 
 .main-header h1 {
   font-size: 40px;
-  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 100%);
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: var(--spacing-sm);
   font-weight: 700;
-  letter-spacing: -0.5px;
 }
 
 .subtitle {
   font-size: 16px;
   color: hsl(var(--text-secondary));
-  font-weight: 400;
   max-width: 600px;
   margin: 0 auto;
 }
 
-.section {
-  margin-bottom: var(--spacing-2xl);
-}
-
-.section-header {
-  margin-bottom: var(--spacing-xl);
-}
-
-.section-header h2 {
-  font-size: 26px;
-  color: hsl(var(--text-primary));
-  margin-bottom: var(--spacing-sm);
-  font-weight: 700;
-  letter-spacing: -0.3px;
-}
-
-.section-description {
-  color: hsl(var(--text-secondary));
-  font-size: 15px;
-  line-height: 1.7;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-xl);
-}
-
-.info-card {
+.card {
   background: hsl(var(--surface));
   border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+  transition: box-shadow 0.3s;
+}
+
+.card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+.card h3 {
+  color: hsl(var(--primary));
+  margin-bottom: var(--spacing-md);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.collapsible-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.collapsible-content { display: none; }
+.collapsible-open .collapsible-content { display: block; }
+
+/* Upload Zone */
+.upload-zone {
+  border: 2px dashed hsl(var(--border));
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-2xl);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: hsl(var(--surface-elevated));
+  margin-top: var(--spacing-lg);
+}
+
+.upload-zone:hover {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.05);
+}
+
+.upload-zone.dragging {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+  transform: scale(1.02);
+}
+
+.upload-zone.has-file {
+  border-color: hsl(var(--success));
+  background: hsl(var(--success) / 0.05);
+}
+
+.upload-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto var(--spacing-md);
+  background: hsl(var(--primary) / 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-icon::before {
+  content: '↑';
+  font-size: 32px;
+  color: hsl(var(--primary));
+  font-weight: bold;
+}
+
+.file-name {
+  margin-top: var(--spacing-md);
+  color: hsl(var(--success));
+  font-weight: 600;
+}
+
+/* Search & Selection */
+.search-box {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 2px solid hsl(var(--border));
+  border-radius: var(--radius);
+  font-size: 15px;
+  margin-bottom: var(--spacing-lg);
+  transition: border-color 0.3s;
+}
+
+.search-box:focus {
+  outline: none;
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+}
+
+.selected-traits-summary {
+  background: hsl(var(--primary) / 0.05);
+  border: 1px solid hsl(var(--primary) / 0.2);
   border-radius: var(--radius);
   padding: var(--spacing-lg);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
+  margin-bottom: var(--spacing-lg);
 }
 
-.info-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 100%);
-  transform: scaleX(0);
-  transition: transform 0.3s ease;
+.selected-traits-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
 }
 
-.info-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  border-color: hsl(var(--primary) / 0.3);
+.selected-trait-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: hsl(var(--surface));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
 }
 
-.info-card:hover::before {
-  transform: scaleX(1);
-}
-
-.info-label {
-  font-size: 12px;
+.level-indicator {
+  font-size: 11px;
   font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: hsl(var(--primary));
-  margin-bottom: var(--spacing-xs);
 }
 
-.info-value {
-  font-size: 15px;
-  color: hsl(var(--text-primary));
-  font-weight: 500;
-  line-height: 1.5;
+.level-indicator.low { background: hsl(var(--warning) / 0.2); color: hsl(var(--warning)); }
+.level-indicator.medium { background: hsl(var(--info) / 0.2); color: hsl(var(--info)); }
+.level-indicator.high { background: hsl(var(--success) / 0.2); color: hsl(var(--success)); }
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: hsl(var(--danger));
+  cursor: pointer;
+  font-size: 12px;
 }
 
-.trait-selection-grid {
+/* Trait Selector Grid */
+.trait-selector-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-xl);
 }
 
-.trait-card {
+.trait-selector-card {
   background: hsl(var(--surface));
   border: 2px solid hsl(var(--border));
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
   padding: var(--spacing-lg);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  align-items: start;
-  gap: var(--spacing-md);
-  position: relative;
-  overflow: hidden;
+  transition: all 0.3s;
 }
 
-.trait-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: linear-gradient(180deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.trait-card:hover {
+.trait-selector-card:hover:not(.disabled) {
   border-color: hsl(var(--primary) / 0.5);
-  box-shadow: var(--shadow);
   transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
-.trait-card.selected {
+.trait-selector-card.selected {
   border-color: hsl(var(--primary));
-  background: linear-gradient(135deg, hsl(var(--primary) / 0.08) 0%, hsl(var(--surface)) 100%);
-  box-shadow: var(--shadow);
+  background: hsl(var(--primary) / 0.05);
 }
 
-.trait-card.selected::before {
-  opacity: 1;
+.trait-selector-card.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
-.trait-card input[type="checkbox"] {
-  width: 22px;
-  height: 22px;
-  cursor: pointer;
-  accent-color: hsl(var(--primary));
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.trait-info {
-  flex: 1;
-}
-
-.trait-name {
+.trait-name-selector {
   font-weight: 700;
-  color: hsl(var(--text-primary));
-  margin-bottom: 6px;
+  margin-bottom: var(--spacing-sm);
   font-size: 16px;
-  letter-spacing: -0.2px;
 }
 
-.trait-meta {
+.trait-description-selector {
   font-size: 13px;
-  color: hsl(var(--text-tertiary));
-  display: flex;
-  gap: var(--spacing-md);
-  align-items: center;
+  color: hsl(var(--text-secondary));
+  margin-bottom: var(--spacing-md);
+  line-height: 1.6;
 }
 
-.action-group {
+.trait-level-selector {
   display: flex;
-  gap: var(--spacing-md);
-  justify-content: center;
-  flex-wrap: wrap;
-  align-items: center;
+  gap: 8px;
+  margin-top: var(--spacing-md);
 }
 
-.sticky-actions {
-  position: sticky;
-  top: var(--spacing-md);
+.level-btn {
+  flex: 1;
+  padding: 8px;
+  border: 2px solid hsl(var(--border));
   background: hsl(var(--surface));
-  padding: var(--spacing-lg);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xl);
-  z-index: 10;
-  margin-bottom: var(--spacing-2xl);
-  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
 }
 
+.level-btn:hover { border-color: hsl(var(--primary)); }
+
+.level-btn.active {
+  background: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+  color: white;
+}
+
+/* Buttons */
 .btn {
   padding: 14px 28px;
   font-size: 15px;
@@ -289,31 +294,8 @@ body {
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s;
   font-family: inherit;
-  text-decoration: none;
-  display: inline-block;
-  letter-spacing: 0.3px;
-  position: relative;
-  overflow: hidden;
-}
-
-.btn::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
-}
-
-.btn:active::before {
-  width: 300px;
-  height: 300px;
 }
 
 .btn:disabled {
@@ -322,7 +304,7 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-dark)) 100%);
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-dark)));
   color: white;
   box-shadow: 0 4px 12px hsl(var(--primary) / 0.3);
 }
@@ -332,520 +314,132 @@ body {
   box-shadow: 0 6px 20px hsl(var(--primary) / 0.4);
 }
 
-.btn-primary:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.btn-secondary {
-  background: hsl(var(--surface));
-  color: hsl(var(--text-primary));
-  border: 2px solid hsl(var(--border));
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: hsl(var(--surface-elevated));
-  border-color: hsl(var(--primary) / 0.3);
-  transform: translateY(-1px);
-}
-
-.btn-success {
-  background: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(var(--success) / 0.85) 100%);
-  color: white;
-  box-shadow: 0 4px 12px hsl(var(--success) / 0.3);
-}
-
-.btn-success:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px hsl(var(--success) / 0.4);
-}
-
-.btn-link {
-  background: transparent;
-  color: hsl(var(--primary));
-  padding: 10px 20px;
-}
-
-.btn-link:hover {
-  background: hsl(var(--primary) / 0.1);
-}
-
-.card {
-  background: hsl(var(--surface));
-  border: 1px solid hsl(var(--border));
+/* Results */
+.fit-score-banner {
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.05));
+  border: 2px solid hsl(var(--primary));
   border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
+  padding: var(--spacing-2xl);
+  text-align: center;
   margin-bottom: var(--spacing-xl);
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.3s ease;
 }
 
-.card:hover {
-  box-shadow: var(--shadow);
+.fit-score-label {
+  font-size: 14px;
+  color: hsl(var(--text-secondary));
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: var(--spacing-sm);
 }
 
-.card h3 {
+.fit-score-value {
+  font-size: 48px;
+  font-weight: 800;
   color: hsl(var(--primary));
-  margin-bottom: var(--spacing-md);
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.3px;
+  margin: var(--spacing-md) 0;
 }
 
-.card h4 {
-  color: hsl(var(--text-tertiary));
-  font-weight: 500;
-  margin-top: 4px;
-  margin-bottom: var(--spacing-md);
+.recommendation-banner {
+  padding: var(--spacing-lg);
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 16px;
+  text-align: center;
+}
+
+.recommendation-banner.strongly-recommend {
+  background: hsl(var(--success) / 0.2);
+  color: hsl(var(--success));
+  border: 2px solid hsl(var(--success));
+}
+
+.recommendation-banner.recommend {
+  background: hsl(var(--info) / 0.2);
+  color: hsl(var(--info));
+  border: 2px solid hsl(var(--info));
+}
+
+.recommendation-banner.caution {
+  background: hsl(var(--warning) / 0.2);
+  color: hsl(var(--warning));
+  border: 2px solid hsl(var(--warning));
+}
+
+.recommendation-banner.not-recommend {
+  background: hsl(var(--danger) / 0.2);
+  color: hsl(var(--danger));
+  border: 2px solid hsl(var(--danger));
+}
+
+.dimension-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.dimension-card {
+  background: hsl(var(--surface-elevated));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: var(--spacing-lg);
+}
+
+.dimension-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.dimension-name {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.score-badge {
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
   font-size: 13px;
 }
 
-.card p {
-  color: hsl(var(--text-primary));
-  margin-bottom: var(--spacing-md);
-  font-size: 15px;
-  line-height: 1.7;
+.score-badge.high { background: hsl(var(--success) / 0.2); color: hsl(var(--success)); }
+.score-badge.medium { background: hsl(var(--info) / 0.2); color: hsl(var(--info)); }
+.score-badge.low { background: hsl(var(--warning) / 0.2); color: hsl(var(--warning)); }
+
+.likert-bar {
+  height: 8px;
+  background: hsl(var(--border));
+  border-radius: 4px;
+  overflow: hidden;
+  margin: var(--spacing-sm) 0;
 }
 
-.option-label {
-  display: block;
-  padding: var(--spacing-lg);
+.likert-fill {
+  height: 100%;
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary-light)));
+  transition: width 0.5s;
+}
+
+.evidence-list {
+  list-style: none;
+  padding: 0;
+}
+
+.evidence-list li {
+  padding: var(--spacing-md);
   background: hsl(var(--surface-elevated));
-  border: 2px solid hsl(var(--border));
-  border-radius: var(--radius-lg);
-  margin-bottom: var(--spacing-md);
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 14px;
-  line-height: 1.6;
-  position: relative;
-  overflow: hidden;
-}
-
-.option-label::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 4px;
-  background: hsl(var(--primary));
-  transform: scaleY(0);
-  transition: transform 0.3s ease;
-}
-
-.option-label:hover {
-  border-color: hsl(var(--primary) / 0.5);
-  background: hsl(var(--primary) / 0.05);
-  transform: translateX(4px);
-}
-
-.option-label.selected {
-  border-color: hsl(var(--primary));
-  background: linear-gradient(135deg, hsl(var(--primary) / 0.12) 0%, hsl(var(--primary) / 0.05) 100%);
-  font-weight: 500;
-  box-shadow: 0 2px 8px hsl(var(--primary) / 0.2);
-}
-
-.option-label.selected::before {
-  transform: scaleY(1);
-}
-
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 1000;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
-  animation: fadeIn 0.3s ease;
-}
-
-/* Collapsible quick styles (instant hide/show) */
-  .collapsible-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    padding: 6px 0;
-  }
-  .collapsible-content { display: none; } /* default hidden; we will show the first step content via JS */
-  .collapsible-open .collapsible-content { display: block; }
-  .no-emoji { /* helper, nothing here — ensures we don't accidentally add emoji */ }
-  /* spinner and loading inherited from main css */
-
-  /* Upload zone styles */
-  .upload-zone {
-    border: 2px dashed hsl(var(--border));
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-2xl);
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: hsl(var(--surface-elevated));
-    margin-top: var(--spacing-lg);
-  }
-  
-  .upload-zone:hover {
-    border-color: hsl(var(--primary));
-    background: hsl(var(--primary) / 0.05);
-  }
-  
-  .upload-zone.dragging {
-    border-color: hsl(var(--primary));
-    background: hsl(var(--primary) / 0.1);
-    transform: scale(1.02);
-  }
-  
-  .upload-zone.has-file {
-    border-color: hsl(var(--success));
-    background: hsl(var(--success) / 0.05);
-  }
-  
-  .upload-icon {
-    width: 60px;
-    height: 60px;
-    margin: 0 auto var(--spacing-md);
-    background: hsl(var(--primary) / 0.1);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .upload-icon::before {
-    content: '↑';
-    font-size: 32px;
-    color: hsl(var(--primary));
-    font-weight: bold;
-  }
-  
-  .upload-zone h3 {
-    color: hsl(var(--text-primary));
-    margin-bottom: var(--spacing-sm);
-    font-size: 18px;
-  }
-  
-  .file-name {
-    margin-top: var(--spacing-md);
-    color: hsl(var(--success));
-    font-weight: 600;
-    font-size: 14px;
-  }
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.modal-content {
-  background-color: hsl(var(--surface));
-  margin: 5% auto;
-  border-radius: var(--radius-lg);
-  max-width: 700px;
-  box-shadow: var(--shadow-xl);
-  animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(50px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-xl);
-  border-bottom: 2px solid hsl(var(--border));
-  background: linear-gradient(135deg, hsl(var(--primary) / 0.05) 0%, hsl(var(--surface)) 100%);
-}
-
-.modal-header h2 {
-  color: hsl(var(--primary));
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.3px;
-}
-
-.close {
-  color: hsl(var(--text-tertiary));
-  font-size: 32px;
-  font-weight: bold;
-  cursor: pointer;
-  line-height: 1;
-  transition: all 0.2s;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-
-.close:hover {
-  color: hsl(var(--text-primary));
-  background: hsl(var(--border) / 0.3);
-}
-
-.modal-body {
-  padding: var(--spacing-xl);
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-.modal-body h3 {
-  color: hsl(var(--primary));
-  margin-top: var(--spacing-xl);
-  margin-bottom: var(--spacing-md);
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.3px;
-}
-
-.modal-body h3:first-child {
-  margin-top: 0;
-}
-
-.modal-body p {
-  margin-bottom: var(--spacing-md);
-  color: hsl(var(--text-secondary));
-  line-height: 1.8;
-}
-
-.modal-body ul, .modal-body ol {
-  margin-bottom: var(--spacing-lg);
-  padding-left: var(--spacing-xl);
-  color: hsl(var(--text-secondary));
-}
-
-.modal-body li {
+  border-left: 3px solid hsl(var(--primary));
   margin-bottom: var(--spacing-sm);
-  line-height: 1.8;
+  border-radius: 8px;
 }
 
-.modal-body strong {
-  color: hsl(var(--text-primary));
-  font-weight: 600;
-}
+.concern-list li { border-left-color: hsl(var(--warning)); }
 
-.result-card {
-  background: hsl(var(--surface));
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius-lg);
-  margin-bottom: var(--spacing-xl);
-  overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: var(--shadow-sm);
-}
-
-.result-card:hover {
-  box-shadow: var(--shadow);
-}
-
-.result-header {
-  padding: var(--spacing-xl);
-  background: linear-gradient(135deg, hsl(var(--surface-elevated)) 0%, hsl(var(--surface)) 100%);
-  border-bottom: 2px solid hsl(var(--border));
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.result-header:hover {
-  background: linear-gradient(135deg, hsl(var(--primary) / 0.08) 0%, hsl(var(--surface)) 100%);
-  border-bottom-color: hsl(var(--primary) / 0.3);
-}
-
-.result-header h3 {
-  color: hsl(var(--primary));
-  font-size: 22px;
-  font-weight: 700;
-  margin: 0;
-  letter-spacing: -0.3px;
-}
-
-.toggle-icon {
-  color: hsl(var(--text-tertiary));
-  font-size: 20px;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-weight: bold;
-}
-
-.toggle-icon.expanded {
-  transform: rotate(180deg);
-}
-
-.result-content {
-  padding: var(--spacing-xl);
-  display: none;
-  animation: slideDown 0.3s ease;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.result-content.expanded {
-  display: block;
-}
-
-.metric-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-xl);
-}
-
-.metric-card {
-  background: linear-gradient(135deg, hsl(var(--surface-elevated)) 0%, hsl(var(--surface)) 100%);
-  padding: var(--spacing-lg);
-  border-radius: var(--radius);
-  border: 2px solid hsl(var(--border));
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.metric-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 100%);
-}
-
-.metric-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
-  border-color: hsl(var(--primary) / 0.3);
-}
-
-.metric-label {
-  font-size: 12px;
-  color: hsl(var(--text-tertiary));
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin-bottom: 6px;
-  font-weight: 700;
-}
-
-.metric-value {
-  font-size: 28px;
-  font-weight: 800;
-  color: hsl(var(--primary));
-  letter-spacing: -0.5px;
-}
-
-.analysis-section {
-  margin-bottom: var(--spacing-xl);
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: hsl(var(--card-bg));
-}
-
-.analysis-section h4 {
-  color: hsl(var(--text-primary));
-  font-size: 17px;
-  font-weight: 700;
-  margin: 0;
-  padding: var(--spacing-lg);
-  background: hsl(var(--surface));
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: all 0.3s ease;
-  border-bottom: 1px solid hsl(var(--border));
-  letter-spacing: -0.2px;
-}
-
-.analysis-section h4:hover {
-  background: hsl(var(--primary) / 0.05);
-  color: hsl(var(--primary));
-}
-
-.analysis-content {
-  padding: var(--spacing-lg);
-  display: none;
-}
-
-.analysis-content.expanded {
-  display: block;
-  animation: fadeIn 0.3s ease;
-}
-
-.analysis-content p {
-  margin-bottom: var(--spacing-md);
-  color: hsl(var(--text-secondary));
-  line-height: 1.8;
-}
-
-.analysis-content strong {
-  color: hsl(var(--text-primary));
-  font-weight: 700;
-}
-
-.badge {
-  display: inline-block;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.badge-high {
-  background: linear-gradient(135deg, hsl(var(--success) / 0.2) 0%, hsl(var(--success) / 0.1) 100%);
-  color: hsl(var(--success));
-  border: 1px solid hsl(var(--success) / 0.4);
-}
-
-.badge-medium {
-  background: linear-gradient(135deg, hsl(var(--info) / 0.2) 0%, hsl(var(--info) / 0.1) 100%);
-  color: hsl(var(--info));
-  border: 1px solid hsl(var(--info) / 0.4);
-}
-
-.badge-low {
-  background: linear-gradient(135deg, hsl(var(--warning) / 0.2) 0%, hsl(var(--warning) / 0.1) 100%);
-  color: hsl(var(--warning));
-  border: 1px solid hsl(var(--warning) / 0.4);
-}
-
+/* Loading */
 .loading {
   text-align: center;
   padding: var(--spacing-2xl);
-}
-
-.loading p {
-  color: hsl(var(--text-secondary));
-  font-size: 16px;
-  font-weight: 500;
 }
 
 .spinner {
@@ -863,338 +457,12 @@ body {
   100% { transform: rotate(360deg); }
 }
 
-.overall-assessment {
-  background: linear-gradient(135deg, hsl(var(--primary) / 0.08) 0%, hsl(var(--surface)) 100%);
-  border: 2px solid hsl(var(--primary) / 0.3);
-  position: relative;
-  overflow: hidden;
-}
-
-.overall-assessment::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(var(--primary-light)) 50%, hsl(var(--primary)) 100%);
-}
-
-.overall-assessment h2 {
-  color: hsl(var(--primary));
-  font-size: 30px;
-  margin-bottom: var(--spacing-lg);
-  font-weight: 800;
-  letter-spacing: -0.5px;
-}
-
-.summary-text {
-  font-size: 16px;
-  line-height: 1.8;
-  color: hsl(var(--text-secondary));
-  margin-bottom: var(--spacing-lg);
-}
-
-.btn-expand {
-  display: inline-block;
-  padding: 10px 20px;
-  background: hsl(var(--primary) / 0.1);
-  color: hsl(var(--primary));
-  border: 1px solid hsl(var(--primary) / 0.3);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  margin-top: var(--spacing-md);
-}
-
-.btn-expand:hover {
-  background: hsl(var(--primary) / 0.2);
-  border-color: hsl(var(--primary) / 0.5);
-  transform: translateX(4px);
-}
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: hsl(var(--surface-elevated));
-}
-
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.3);
-  border-radius: 5px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.5);
-}
-
+/* Responsive */
 @media (max-width: 768px) {
-  .container {
-    padding: var(--spacing-lg) var(--spacing-md);
-  }
-  
-  .main-header h1 {
-    font-size: 32px;
-  }
-  
-  .trait-selection-grid,
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .metric-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .modal-content {
-    margin: 10% var(--spacing-md);
-    max-width: 100%;
-  }
-  
-  .sticky-actions {
-    position: relative;
-    top: 0;
-  }
+  .container { padding: var(--spacing-lg) var(--spacing-md); }
+  .main-header h1 { font-size: 32px; }
+  .trait-selector-grid, .dimension-grid { grid-template-columns: 1fr; }
 }
-
-
-/* ========================================
-   NEW STYLES FOR ENHANCED FEATURES
-   Add these to your existing styles.css
-   ======================================== */
-
-/* New styles for metrics table */
-.metrics-table-card {
-  margin-bottom: 30px;
-}
-
-.metrics-table-wrapper {
-  overflow-x: auto;
-  margin-top: 20px;
-}
-
-.metrics-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.metrics-table thead {
-  background: hsl(var(--bg-secondary));
-}
-
-.metrics-table th {
-  padding: 12px 15px;
-  text-align: left;
-  font-weight: 600;
-  color: hsl(var(--text-primary));
-  border-bottom: 2px solid hsl(var(--border));
-  white-space: nowrap;
-  position: relative;
-}
-
-.metrics-table td {
-  padding: 15px;
-  border-bottom: 1px solid hsl(var(--border));
-}
-
-.metrics-table tbody tr {
-  transition: background 0.2s;
-}
-
-.metrics-table tbody tr:hover {
-  background: hsl(var(--bg-secondary) / 0.5);
-}
-
-.trait-name-cell {
-  font-weight: 500;
-}
-
-.trait-range {
-  font-size: 12px;
-  color: hsl(var(--text-tertiary));
-  font-weight: normal;
-}
-
-.score-cell {
-  font-weight: 600;
-  color: hsl(var(--primary));
-}
-
-.pattern-cell code {
-  background: hsl(var(--bg-secondary));
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 13px;
-}
-
-.summary-row {
-  background: hsl(var(--primary) / 0.05);
-  font-weight: 600;
-}
-
-.summary-row td {
-  border-top: 2px solid hsl(var(--primary));
-  padding-top: 18px;
-}
-
-/* Personality type banner */
-.personality-type-banner {
-  background: linear-gradient(135deg, hsl(var(--primary) / 0.1) 0%, hsl(var(--primary) / 0.05) 100%);
-  border: 2px solid hsl(var(--primary));
-  border-radius: 12px;
-  padding: 25px;
-  margin: 25px 0;
-  text-align: center;
-}
-
-.personality-type-label {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: hsl(var(--text-tertiary));
-  letter-spacing: 1px;
-  margin-bottom: 8px;
-}
-
-.personality-type-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: hsl(var(--primary));
-  margin-bottom: 10px;
-}
-
-/* Tooltip styles */
-.has-tooltip {
-  position: relative;
-  cursor: help;
-}
-
-.tooltip {
-  visibility: hidden;
-  opacity: 0;
-  position: absolute;
-  bottom: 125%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: hsl(var(--text-primary));
-  color: white;
-  padding: 10px 15px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: normal;
-  white-space: normal;
-  width: 250px;
-  text-align: left;
-  z-index: 1000;
-  transition: opacity 0.3s, visibility 0.3s;
-  box-shadow: 0 4px 12px hsla(var(--shadow) / 0.3);
-  line-height: 1.5;
-}
-
-.tooltip::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 6px solid transparent;
-  border-top-color: hsl(var(--text-primary));
-}
-
-.has-tooltip:hover .tooltip {
-  visibility: visible;
-  opacity: 1;
-}
-
-.help-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  background: hsl(var(--primary) / 0.2);
-  color: hsl(var(--primary));
-  border-radius: 50%;
-  font-size: 12px;
-  font-weight: bold;
-  cursor: help;
-  margin-left: 5px;
-  position: relative;
-}
-
-.help-icon:hover {
-  background: hsl(var(--primary) / 0.3);
-}
-
-.help-text {
-  font-size: 13px;
-  color: hsl(var(--text-tertiary));
-  font-style: italic;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .metrics-table {
-    font-size: 12px;
-  }
-  
-  .metrics-table th,
-  .metrics-table td {
-    padding: 10px 8px;
-  }
-  
-  .personality-type-title {
-    font-size: 22px;
-  }
-  
-  .tooltip {
-    width: 200px;
-    font-size: 12px;
-  }
-  
-  .metric-grid {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  }
-}
-
-@media (max-width: 600px) {
-  .metrics-table-wrapper {
-    margin: 0 -15px;
-  }
-  
-  .metrics-table {
-    font-size: 11px;
-  }
-  
-  .badge {
-    font-size: 11px;
-    padding: 3px 8px;
-  }
-}
-  </style>
-
-  <!-- Minimal additions for collapsible and slight alignment (kept small) -->
-  <style>
-    /* Collapsible quick styles (instant hide/show) */
-    .collapsible-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
-      padding: 6px 0;
-    }
-    .collapsible-content { display: none; } /* default hidden; we will show the first step content via JS */
-    .collapsible-open .collapsible-content { display: block; }
-    .no-emoji { /* helper, nothing here — ensures we don't accidentally add emoji */ }
-    /* spinner and loading inherited from main css */
   </style>
 </head>
 
@@ -1206,7 +474,7 @@ body {
       <a href="/" style="color: hsl(var(--primary)); text-decoration: none;">← Back to Assessment</a>
     </header>
 
-    <!-- Step 1: Upload Candidate Report (collapsible container) -->
+    <!-- Step 1: Upload Candidate Report -->
     <div id="step1" class="card collapsible-open">
       <div class="collapsible-header" id="step1Header">
         <div>Step 1: Upload Candidate's Personality Report</div>
@@ -1218,7 +486,7 @@ body {
           Upload the PDF report generated from this assessment tool.
         </p>
 
-        <div class="upload-zone" id="candidateUpload" title="Click to upload or drag & drop PDF (only .pdf accepted)">
+        <div class="upload-zone" id="candidateUpload" title="Click to upload or drag & drop PDF">
           <div class="upload-icon" aria-hidden="true"></div>
           <h3>Candidate's Personality Report</h3>
           <p style="color: hsl(var(--text-secondary));">Click to upload or drag & drop</p>
@@ -1228,7 +496,7 @@ body {
       </div>
     </div>
 
-    <!-- Step 2: Define Job Requirements (hidden until file uploaded) -->
+    <!-- Step 2: Define Job Requirements -->
     <div id="step2" class="card" style="display:none;">
       <div class="collapsible-header" id="step2Header">
         <div>Step 2: Define Ideal Trait Profile for the Role</div>
@@ -1256,91 +524,66 @@ body {
       </div>
     </div>
 
-    <!-- Results container (appears after analysis) -->
+    <!-- Results container -->
     <div id="results" class="match-results" aria-live="polite"></div>
   </div>
 
   <script>
-  /***************************************************************************
-   * Full JavaScript: upload -> automatic step collapse/expand -> trait selector
-   * -> analyze (POST) -> render results.
-   *
-   * No emojis. Instant collapse (display none/block). Preserves original logic.
-   ***************************************************************************/
-
-  // --- Trait pairs mapping and descriptions (full list) ---
   const traitPairs = {
-    'Analytical Thinking': 'Intuitive Thinking',
-    'Intuitive Thinking': 'Analytical Thinking',
-    'Risk-Taking': 'Risk Aversion',
-    'Risk Aversion': 'Risk-Taking',
-    'Collaboration': 'Independent Work',
-    'Independent Work': 'Collaboration',
-    'Detail Orientation': 'Big Picture Thinking',
-    'Big Picture Thinking': 'Detail Orientation',
-    'Adaptability': 'Consistency',
-    'Consistency': 'Adaptability',
-    'Proactivity': 'Reactivity',
-    'Reactivity': 'Proactivity',
-    'Empathy': 'Task Focus',
-    'Task Focus': 'Empathy',
-    'Innovation': 'Process Adherence',
-    'Process Adherence': 'Innovation',
-    'Decisiveness': 'Deliberation',
-    'Deliberation': 'Decisiveness',
-    'Assertiveness': 'Diplomacy',
-    'Diplomacy': 'Assertiveness',
-    'Optimism': 'Realism',
-    'Realism': 'Optimism',
-    'Structured': 'Flexible',
-    'Flexible': 'Structured',
-    'Results-Oriented': 'Process-Oriented',
-    'Process-Oriented': 'Results-Oriented',
-    'Competitive': 'Cooperative',
-    'Cooperative': 'Competitive',
-    'Confidence': 'Humility',
-    'Humility': 'Confidence'
+    'Analytical Thinking': 'Intuitive Thinking', 'Intuitive Thinking': 'Analytical Thinking',
+    'Risk-Taking': 'Risk Aversion', 'Risk Aversion': 'Risk-Taking',
+    'Collaboration': 'Independent Work', 'Independent Work': 'Collaboration',
+    'Detail Orientation': 'Big Picture Thinking', 'Big Picture Thinking': 'Detail Orientation',
+    'Adaptability': 'Consistency', 'Consistency': 'Adaptability',
+    'Proactivity': 'Reactivity', 'Reactivity': 'Proactivity',
+    'Empathy': 'Task Focus', 'Task Focus': 'Empathy',
+    'Innovation': 'Process Adherence', 'Process Adherence': 'Innovation',
+    'Decisiveness': 'Deliberation', 'Deliberation': 'Decisiveness',
+    'Assertiveness': 'Diplomacy', 'Diplomacy': 'Assertiveness',
+    'Optimism': 'Realism', 'Realism': 'Optimism',
+    'Structured': 'Flexible', 'Flexible': 'Structured',
+    'Results-Oriented': 'Process-Oriented', 'Process-Oriented': 'Results-Oriented',
+    'Competitive': 'Cooperative', 'Cooperative': 'Competitive',
+    'Confidence': 'Humility', 'Humility': 'Confidence'
   };
 
   const traitDescriptions = {
-    'Analytical Thinking': 'Makes decisions based on data, logic, and systematic analysis. Values evidence and rational processes.',
-    'Intuitive Thinking': 'Relies on instinct, gut feelings, and pattern recognition. Trusts experience-based insights.',
-    'Risk-Taking': 'Comfortable with uncertainty and willing to try unconventional approaches. Embraces bold initiatives.',
-    'Risk Aversion': 'Prefers proven methods and careful planning. Values stability and predictability.',
-    'Collaboration': 'Thrives in team settings and values group input. Builds consensus and shares responsibility.',
-    'Independent Work': 'Prefers autonomy and self-directed tasks. Works best with minimal oversight.',
-    'Detail Orientation': 'Focuses on precision, accuracy, and thorough execution. Notices small but important elements.',
-    'Big Picture Thinking': 'Focuses on strategy, vision, and overall objectives. Sees connections between different elements.',
-    'Adaptability': 'Flexible and comfortable with change. Adjusts quickly to new situations and requirements.',
-    'Consistency': 'Values reliability and predictable approaches. Maintains stable methods and routines.',
-    'Proactivity': 'Takes initiative and anticipates needs. Acts without waiting for direction.',
-    'Reactivity': 'Responds thoughtfully to situations as they arise. Prefers to assess before acting.',
-    'Empathy': 'Prioritizes understanding others\\' feelings and perspectives. Values emotional intelligence.',
-    'Task Focus': 'Prioritizes objectives and deliverables. Maintains focus on outcomes over relationships.',
-    'Innovation': 'Seeks new solutions and creative approaches. Questions conventional methods.',
-    'Process Adherence': 'Follows established procedures and best practices. Values systematic approaches.',
-    'Decisiveness': 'Makes quick, firm decisions with available information. Acts with confidence.',
-    'Deliberation': 'Takes time to consider multiple perspectives before deciding. Values thorough analysis.',
-    'Assertiveness': 'Direct and firm in communication. Advocates strongly for positions and needs.',
-    'Diplomacy': 'Tactful and consensus-oriented in communication. Considers impact on relationships.',
-    'Optimism': 'Focuses on possibilities and positive outcomes. Maintains hopeful perspective.',
-    'Realism': 'Focuses on practical constraints and likely outcomes. Maintains balanced perspective.',
-    'Structured': 'Prefers organized, planned approaches. Values clear frameworks and schedules.',
-    'Flexible': 'Comfortable with spontaneity and fluid situations. Adapts plans as needed.',
-    'Results-Oriented': 'Focuses on outcomes and achievement. Measures success by deliverables.',
-    'Process-Oriented': 'Focuses on methods and quality of execution. Values how work is done.',
-    'Competitive': 'Motivated by winning and outperforming others. Thrives on comparison.',
-    'Cooperative': 'Motivated by mutual success and collective achievement. Thrives on collaboration.',
-    'Confidence': 'Self-assured and willing to take charge. Comfortable with visibility and leadership.',
-    'Humility': 'Values learning and acknowledges limitations. Comfortable sharing credit.'
+    'Analytical Thinking': 'Makes decisions based on data, logic, and systematic analysis.',
+    'Intuitive Thinking': 'Relies on instinct, gut feelings, and pattern recognition.',
+    'Risk-Taking': 'Comfortable with uncertainty and willing to try unconventional approaches.',
+    'Risk Aversion': 'Prefers proven methods and careful planning.',
+    'Collaboration': 'Thrives in team settings and values group input.',
+    'Independent Work': 'Prefers autonomy and self-directed tasks.',
+    'Detail Orientation': 'Focuses on precision, accuracy, and thorough execution.',
+    'Big Picture Thinking': 'Focuses on strategy, vision, and overall objectives.',
+    'Adaptability': 'Flexible and comfortable with change.',
+    'Consistency': 'Values reliability and predictable approaches.',
+    'Proactivity': 'Takes initiative and anticipates needs.',
+    'Reactivity': 'Responds thoughtfully to situations as they arise.',
+    'Empathy': 'Prioritizes understanding others\' feelings and perspectives.',
+    'Task Focus': 'Prioritizes objectives and deliverables.',
+    'Innovation': 'Seeks new solutions and creative approaches.',
+    'Process Adherence': 'Follows established procedures and best practices.',
+    'Decisiveness': 'Makes quick, firm decisions with available information.',
+    'Deliberation': 'Takes time to consider multiple perspectives before deciding.',
+    'Assertiveness': 'Direct and firm in communication.',
+    'Diplomacy': 'Tactful and consensus-oriented in communication.',
+    'Optimism': 'Focuses on possibilities and positive outcomes.',
+    'Realism': 'Focuses on practical constraints and likely outcomes.',
+    'Structured': 'Prefers organized, planned approaches.',
+    'Flexible': 'Comfortable with spontaneity and fluid situations.',
+    'Results-Oriented': 'Focuses on outcomes and achievement.',
+    'Process-Oriented': 'Focuses on methods and quality of execution.',
+    'Competitive': 'Motivated by winning and outperforming others.',
+    'Cooperative': 'Motivated by mutual success and collective achievement.',
+    'Confidence': 'Self-assured and willing to take charge.',
+    'Humility': 'Values learning and acknowledges limitations.'
   };
 
-  // --- State ---
   let candidateFile = null;
-  let selectedJobTraits = {}; // { traitKey: { level: 'low'|'medium'|'high', name, description } }
+  let selectedJobTraits = {};
   const MAX_TRAITS = 15;
 
-  // --- Elements ---
   const step1 = document.getElementById('step1');
   const step1Content = document.getElementById('step1Content');
   const step2 = document.getElementById('step2');
@@ -1356,80 +599,55 @@ body {
   const analyzeBtn = document.getElementById('analyzeBtn');
   const resultsDiv = document.getElementById('results');
 
-  // Initialize: show step1 content (already shown by default)
-  function openStep1() {
-    step1.style.display = 'block';
-    step1.classList.add('collapsible-open');
-    step1Content.style.display = 'block';
-  }
   function closeStep1() {
     step1Content.style.display = 'none';
     step1.classList.remove('collapsible-open');
   }
+
   function openStep2() {
     step2.style.display = 'block';
     step2.classList.add('collapsible-open');
     step2Content.style.display = 'block';
   }
-  function closeStep2() {
-    step2Content.style.display = 'none';
-    step2.classList.remove('collapsible-open');
-  }
 
-  openStep1();
-
-  // --- File upload handling ---
   candidateUpload.addEventListener('click', () => candidateInput.click());
 
-  // Allow drag & drop
-  ;['dragenter','dragover','dragleave','drop'].forEach(evt=>{
-    candidateUpload.addEventListener(evt, (e)=>{
+  ['dragenter','dragover','dragleave','drop'].forEach(evt => {
+    candidateUpload.addEventListener(evt, e => {
       e.preventDefault();
       e.stopPropagation();
     });
   });
-  candidateUpload.addEventListener('dragover', ()=> candidateUpload.classList.add('dragging'));
-  candidateUpload.addEventListener('dragleave', ()=> candidateUpload.classList.remove('dragging'));
-  candidateUpload.addEventListener('drop', (e)=>{
+
+  candidateUpload.addEventListener('dragover', () => candidateUpload.classList.add('dragging'));
+  candidateUpload.addEventListener('dragleave', () => candidateUpload.classList.remove('dragging'));
+  candidateUpload.addEventListener('drop', e => {
     candidateUpload.classList.remove('dragging');
-    const files = e.dataTransfer.files;
-    if(files && files.length) {
-      handleCandidateFile(files[0]);
-    }
+    if(e.dataTransfer.files.length) handleCandidateFile(e.dataTransfer.files[0]);
   });
 
-  candidateInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) handleCandidateFile(file);
+  candidateInput.addEventListener('change', e => {
+    if (e.target.files[0]) handleCandidateFile(e.target.files[0]);
   });
 
   function handleCandidateFile(file) {
-    if (!file.type || file.type !== 'application/pdf') {
-      // show inline warning
-      alert('Please upload a PDF file (.pdf).');
+    if (file.type !== 'application/pdf') {
+      alert('Please upload a PDF file.');
       return;
     }
     candidateFile = file;
     candidateFileName.textContent = file.name;
     candidateUpload.classList.add('has-file');
-
-    // Automatically collapse step 1 and open step 2 (instant)
     closeStep1();
     openStep2();
-
-    // Ensure trait selector is rendered
     renderTraitSelector();
     updateSelectedSummary();
     updateAnalyzeButton();
   }
 
-  // --- Trait selector rendering ---
   function renderTraitSelector() {
-    // Clear
     traitSelectorGrid.innerHTML = '';
-
-    // All traits sorted
-    const allTraits = Object.keys(traitDescriptions).sort((a,b)=>a.localeCompare(b));
+    const allTraits = Object.keys(traitDescriptions).sort();
 
     allTraits.forEach(traitName => {
       const isSelected = !!selectedJobTraits[traitName];
@@ -1442,7 +660,6 @@ body {
       if (isSelected) card.classList.add('selected');
       if (isDisabled) card.classList.add('disabled');
 
-      // inner HTML
       card.innerHTML = `
         <div class="trait-name-selector">${traitName}</div>
         <div class="trait-description-selector">${traitDescriptions[traitName]}</div>
@@ -1456,71 +673,51 @@ body {
       `;
 
       if (!isDisabled) {
-        const levelButtons = card.querySelectorAll('.level-btn');
-        levelButtons.forEach(btn => {
-          btn.addEventListener('click', (e) => {
+        card.querySelectorAll('.level-btn').forEach(btn => {
+          btn.addEventListener('click', e => {
             e.stopPropagation();
             const level = btn.dataset.level;
-
-            // Selecting/deselecting
             if (isSelected && selectedJobTraits[traitName].level === level) {
-              // deselect
               delete selectedJobTraits[traitName];
             } else {
-              // enforce max
               const currentCount = Object.keys(selectedJobTraits).length;
               if (!isSelected && currentCount >= MAX_TRAITS) {
                 alert('You can select up to ' + MAX_TRAITS + ' traits.');
                 return;
               }
-              selectedJobTraits[traitName] = {
-                level: level,
-                name: traitName,
-                description: traitDescriptions[traitName]
-              };
+              selectedJobTraits[traitName] = { level, name: traitName, description: traitDescriptions[traitName] };
             }
-
             renderTraitSelector();
             updateSelectedSummary();
             updateAnalyzeButton();
           });
         });
-      }
 
-      // also allow clicking entire card to toggle (on first click default to medium)
-      card.addEventListener('click', (e) => {
-        if (isDisabled) return;
-        if (!selectedJobTraits[traitName]) {
-          const currentCount = Object.keys(selectedJobTraits).length;
-          if (currentCount >= MAX_TRAITS) {
-            alert('You can select up to ' + MAX_TRAITS + ' traits.');
-            return;
+        card.addEventListener('click', () => {
+          if (!selectedJobTraits[traitName]) {
+            if (Object.keys(selectedJobTraits).length >= MAX_TRAITS) {
+              alert('You can select up to ' + MAX_TRAITS + ' traits.');
+              return;
+            }
+            selectedJobTraits[traitName] = { level: 'medium', name: traitName, description: traitDescriptions[traitName] };
+          } else {
+            delete selectedJobTraits[traitName];
           }
-          selectedJobTraits[traitName] = {
-            level: 'medium',
-            name: traitName,
-            description: traitDescriptions[traitName]
-          };
-        } else {
-          // toggle off
-          delete selectedJobTraits[traitName];
-        }
-        renderTraitSelector();
-        updateSelectedSummary();
-        updateAnalyzeButton();
-      });
+          renderTraitSelector();
+          updateSelectedSummary();
+          updateAnalyzeButton();
+        });
+      }
 
       traitSelectorGrid.appendChild(card);
     });
   }
 
-  // --- Selected summary updates ---
   function updateSelectedSummary() {
     const selectedCount = Object.keys(selectedJobTraits).length;
     selectedCountSpan.textContent = selectedCount;
     if (selectedCount === 0) {
       selectedTraitsSummary.style.display = 'none';
-      selectedTraitsChips.innerHTML = '';
       return;
     }
     selectedTraitsSummary.style.display = 'block';
@@ -1529,110 +726,67 @@ body {
     Object.entries(selectedJobTraits).forEach(([traitName, data]) => {
       const chip = document.createElement('div');
       chip.className = 'selected-trait-chip';
-      const label = document.createElement('span');
-      label.textContent = traitName;
-      const levelSpan = document.createElement('span');
-      levelSpan.className = 'level-indicator ' + data.level;
-      levelSpan.textContent = data.level.toUpperCase();
+      chip.innerHTML = `
+        <span>${traitName}</span>
+        <span class="level-indicator ${data.level}">${data.level.toUpperCase()}</span>
+      `;
       const removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
       removeBtn.className = 'remove-btn';
       removeBtn.textContent = 'Remove';
-      removeBtn.style.marginLeft = '8px';
       removeBtn.addEventListener('click', () => {
         delete selectedJobTraits[traitName];
         renderTraitSelector();
         updateSelectedSummary();
         updateAnalyzeButton();
       });
-
-      chip.appendChild(label);
-      chip.appendChild(levelSpan);
       chip.appendChild(removeBtn);
       selectedTraitsChips.appendChild(chip);
     });
   }
 
-  // --- Analyze button state ---
   function updateAnalyzeButton() {
     analyzeBtn.disabled = Object.keys(selectedJobTraits).length === 0 || !candidateFile;
   }
 
-  // --- Search filtering ---
-  searchBox.addEventListener('input', (e) => {
-    const term = e.target.value.trim().toLowerCase();
+  searchBox.addEventListener('input', e => {
+    const term = e.target.value.toLowerCase();
     document.querySelectorAll('.trait-selector-card').forEach(card => {
-      const name = (card.querySelector('.trait-name-selector') || { textContent: '' }).textContent.toLowerCase();
-      const desc = (card.querySelector('.trait-description-selector') || { textContent: '' }).textContent.toLowerCase();
-      const matches = !term || name.includes(term) || desc.includes(term);
-      card.style.display = matches ? 'block' : 'none';
+      const text = card.textContent.toLowerCase();
+      card.style.display = text.includes(term) ? 'block' : 'none';
     });
   });
 
-  // --- Analyze process (POST to /api/match-candidate) ---
   analyzeBtn.addEventListener('click', async () => {
-    if (!candidateFile) {
-      alert('Please upload candidate report first.');
-      return;
-    }
-    if (Object.keys(selectedJobTraits).length === 0) {
-      alert('Please select at least one trait for the job.');
-      return;
-    }
-
-    // Show loading UI
     resultsDiv.innerHTML = `
       <div class="loading">
-        <div class="spinner" role="status" aria-hidden="true"></div>
+        <div class="spinner"></div>
         <p>Analyzing candidate-job fit with AI...</p>
       </div>
     `;
 
-    // Prepare payload
     const formData = new FormData();
     formData.append('candidate_report', candidateFile);
     formData.append('job_requirements', JSON.stringify(selectedJobTraits));
 
     try {
-      const resp = await fetch('/api/match-candidate', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!resp.ok) {
-        let errText = 'Analysis failed.';
-        try {
-          const ejson = await resp.json();
-          if (ejson && ejson.error) errText = ejson.error;
-        } catch (e) {
-          // fallback
-          errText = await resp.text();
-        }
-        throw new Error(errText);
-      }
-
+      const resp = await fetch('/api/match-candidate', { method: 'POST', body: formData });
+      if (!resp.ok) throw new Error('Analysis failed');
       const result = await resp.json();
-      // On success: collapse step2 and show results beneath (instant)
-      closeStep2();
       step2.style.display = 'none';
       displayResults(result);
-
     } catch (err) {
-      console.error(err);
       resultsDiv.innerHTML = `
         <div class="card" style="background: hsl(var(--warning) / 0.1); border-color: hsl(var(--warning));">
           <h3 style="color: hsl(var(--warning));">Analysis Error</h3>
           <p>Sorry, there was an error analyzing the documents. Please try again.</p>
-          <p style="font-size: 13px; color: hsl(var(--text-tertiary));">Error: ${escapeHtml(String(err.message))}</p>
+          <p style="font-size: 13px; color: hsl(var(--text-tertiary));">Error: ${err.message}</p>
         </div>
       `;
     }
   });
 
-  // --- Results rendering (full) ---
   function displayResults(data) {
-    // defensive defaults
-    const fitScore = typeof data.overall_fit_score === 'number' ? data.overall_fit_score : (data.overall_fit_score || 3);
+    const fitScore = data.overall_fit_score || 3;
     const fitLabel = data.overall_fit_label || 'Adequate Fit';
     let recClass = 'recommend';
     const recText = data.hiring_recommendation || 'No recommendation available';
@@ -1640,26 +794,21 @@ body {
     else if (recText.includes('Do Not Recommend')) recClass = 'not-recommend';
     else if (recText.includes('with Reservations')) recClass = 'caution';
 
-    // Build HTML
-    let html = '';
-
-    html += `
+    let html = `
       <div class="fit-score-banner">
         <div class="fit-score-label">Overall Candidate Fit Score</div>
         <div class="fit-score-value">${Number(fitScore).toFixed(1)}/5.0</div>
-        <div class="fit-score-label">${escapeHtml(fitLabel)}</div>
+        <div class="fit-score-label">${fitLabel}</div>
       </div>
 
       <div class="card">
         <h3>Hiring Recommendation</h3>
-        <div class="recommendation-banner ${recClass}">
-          ${escapeHtml(recText)}
-        </div>
+        <div class="recommendation-banner ${recClass}">${recText}</div>
       </div>
 
       <div class="card">
         <h3>Executive Summary</h3>
-        <p style="line-height: 1.8; white-space: pre-wrap;">${escapeHtml(data.executive_summary || 'No summary available')}</p>
+        <p style="line-height: 1.8; white-space: pre-wrap;">${data.executive_summary || 'No summary available'}</p>
       </div>
 
       <div class="card">
@@ -1668,129 +817,93 @@ body {
     `;
 
     const traitScores = data.trait_scores || {};
-    // Ensure we render all requested traits and those returned by the API
     const allShownTraits = new Set([...Object.keys(selectedJobTraits), ...Object.keys(traitScores)]);
+    
     allShownTraits.forEach(traitName => {
       const traitData = traitScores[traitName] || {};
-      const score = (typeof traitData.score === 'number') ? traitData.score : (traitData.score || 3);
+      const score = traitData.score || 3;
       let scoreClass = 'medium';
       if (score >= 4) scoreClass = 'high';
       else if (score <= 2) scoreClass = 'low';
       const required = selectedJobTraits[traitName];
-      const analysisText = traitData.analysis || '';
 
       html += `
         <div class="dimension-card">
           <div class="dimension-score">
-            <span class="dimension-name">${escapeHtml(traitName)}</span>
+            <span class="dimension-name">${traitName}</span>
             <span class="score-badge ${scoreClass}">${Number(score).toFixed(1)}/5</span>
           </div>
           <p style="font-size: 12px; color: hsl(var(--text-tertiary)); margin: 5px 0;">
             Required: <strong>${required ? required.level.toUpperCase() : 'N/A'}</strong>
           </p>
-          <div class="likert-bar" aria-hidden="true">
+          <div class="likert-bar">
             <div class="likert-fill" style="width: ${(score/5)*100}%;"></div>
           </div>
-          <p style="font-size: 14px; color: hsl(var(--text-secondary)); margin-top: 10px;">${escapeHtml(analysisText)}</p>
+          <p style="font-size: 14px; color: hsl(var(--text-secondary)); margin-top: 10px;">${traitData.analysis || ''}</p>
         </div>
       `;
     });
 
     html += `</div></div>`;
 
-    // Key strengths
     html += `
       <div class="card">
         <h3>Key Strengths</h3>
         <ul class="evidence-list">
-          ${Array.isArray(data.key_strengths) && data.key_strengths.length ? data.key_strengths.map(s => `<li>${escapeHtml(s)}</li>`).join('') : '<li>No strengths identified.</li>'}
+          ${(data.key_strengths || []).map(s => `<li>${s}</li>`).join('') || '<li>No strengths identified.</li>'}
         </ul>
       </div>
-    `;
 
-    // Potential concerns
-    html += `
       <div class="card">
         <h3>Potential Concerns</h3>
         <ul class="evidence-list concern-list">
-          ${Array.isArray(data.potential_concerns) && data.potential_concerns.length ? data.potential_concerns.map(s => `<li>${escapeHtml(s)}</li>`).join('') : '<li>No concerns identified.</li>'}
+          ${(data.potential_concerns || []).map(s => `<li>${s}</li>`).join('') || '<li>No concerns identified.</li>'}
         </ul>
       </div>
-    `;
 
-    // Specific evidence
-    html += `
       <div class="card">
         <h3>Specific Evidence from Report</h3>
         <ul class="evidence-list">
-          ${Array.isArray(data.specific_evidence) && data.specific_evidence.length ? data.specific_evidence.map(s => `<li>${escapeHtml(s)}</li>`).join('') : '<li>No specific evidence provided.</li>'}
+          ${(data.specific_evidence || []).map(s => `<li>${s}</li>`).join('') || '<li>No specific evidence provided.</li>'}
         </ul>
       </div>
-    `;
 
-    // Risk assessment
-    html += `
       <div class="card">
         <h3>Risk Assessment</h3>
-        <p style="line-height:1.8; white-space: pre-wrap;">${escapeHtml(data.risk_assessment || 'No risk assessment available')}</p>
+        <p style="line-height:1.8; white-space: pre-wrap;">${data.risk_assessment || 'No risk assessment available'}</p>
       </div>
-    `;
 
-    // Development needs
-    html += `
       <div class="card">
         <h3>Development Needs</h3>
         <ul class="evidence-list">
-          ${Array.isArray(data.development_needs) && data.development_needs.length ? data.development_needs.map(d => `<li>${escapeHtml(d)}</li>`).join('') : '<li>No development needs identified.</li>'}
+          ${(data.development_needs || []).map(d => `<li>${d}</li>`).join('') || '<li>No development needs identified.</li>'}
         </ul>
       </div>
-    `;
 
-    // Onboarding recommendations
-    html += `
       <div class="card">
         <h3>Onboarding Recommendations</h3>
         <p style="margin-bottom: 15px; color: hsl(var(--text-secondary));">
           If this candidate is hired, consider these recommendations for optimal success:
         </p>
         <ul class="evidence-list">
-          ${Array.isArray(data.onboarding_recommendations) && data.onboarding_recommendations.length ? data.onboarding_recommendations.map(r => `<li>${escapeHtml(r)}</li>`).join('') : '<li>No onboarding recommendations provided.</li>'}
+          ${(data.onboarding_recommendations || []).map(r => `<li>${r}</li>`).join('') || '<li>No onboarding recommendations provided.</li>'}
         </ul>
       </div>
     `;
 
-    // Set results
     resultsDiv.innerHTML = html;
-    // (Do not auto-scroll — user requested results appear below without scrolling)
   }
 
-  // --- Utility: escape HTML to avoid injection in templates ---
-  function escapeHtml(unsafe) {
-    if (unsafe === null || unsafe === undefined) return '';
-    return String(unsafe)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
-
-  // --- Collapsible header manual toggles (optional manual control) ---
   document.querySelectorAll('.collapsible-header').forEach(header => {
     header.addEventListener('click', () => {
-      const parent = header.parentElement;
-      const content = parent.querySelector('.collapsible-content');
-      if (!content) return;
-      const isOpen = content.style.display === 'block';
-      content.style.display = isOpen ? 'none' : 'block';
+      const content = header.parentElement.querySelector('.collapsible-content');
+      if (content) content.style.display = content.style.display === 'block' ? 'none' : 'block';
     });
   });
 
-  // --- Initial render of trait selector (hidden until file upload, but render to keep DOM ready) ---
   renderTraitSelector();
   updateSelectedSummary();
   updateAnalyzeButton();
-
   </script>
 </body>
 </html>
