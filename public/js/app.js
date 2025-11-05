@@ -191,7 +191,6 @@ function checkAllAnswered() {
   return true;
 }
 
-// Calculate results and call Python backend for GPT analysis
 document.getElementById("calculateBtn").onclick = async () => {
   document.getElementById("assessment").style.display = "none";
   
@@ -228,6 +227,12 @@ document.getElementById("calculateBtn").onclick = async () => {
     }
 
     const result = await response.json();
+    
+    // *** ADD THESE LINES TO CACHE THE RESULTS ***
+    cachedResults = result.results;
+    cachedOverallAssessment = result.overallAssessment;
+    cachedTraitAnalyses = result.traitAnalyses;
+    cachedTraitData = assessmentData.traitData;
     
     // Display results
     resultsDiv.innerHTML = result.html;
