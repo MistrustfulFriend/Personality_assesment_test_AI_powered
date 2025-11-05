@@ -856,68 +856,6 @@ def match_candidate():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/match-candidate', methods=['POST'])
-def match_candidate():
-    """Compare candidate report against selected job trait requirements using AI"""
-    try:
-        # Check if candidate report was uploaded
-        if 'candidate_report' not in request.files:
-            return jsonify({'error': 'Candidate report PDF is required'}), 400
-        
-        candidate_file = request.files['candidate_report']
-        
-        # Get job requirements (now as JSON from form data)
-        job_requirements_json = request.form.get('job_requirements')
-        if not job_requirements_json:
-            return jsonify({'error': 'Job requirements are required'}), 400
-        
-        # Validate file type
-        if not candidate_file.filename.endswith('.pdf'):
-            return jsonify({'error': 'Candidate report must be PDF format'}), 400
-        
-        print("\n" + "="*80)
-        print("JOB MATCHING REQUEST RECEIVED - TRAIT SELECTION MODE")
-        print("="*80)
-        print(f"Candidate Report: {candidate_file.filename}")
-        
-        # Parse job requirements
-        job_requirements = json.loads(job_requirements_json)
-        print(f"\nJob Requirements ({len(job_requirements)} traits selected):")
-        for trait_name, trait_data in job_requirements.items():
-            print(f"  - {trait_name}: {trait_data['level'].upper()}")
-        
-        # Extract text from candidate PDF
-        candidate_text = extract_text_from_pdf(candidate_file)
-        
-        if not candidate_text:
-            return jsonify({'error': 'Could not extract text from candidate PDF'}), 400
-        
-        print(f"\nExtracted candidate text: {len(candidate_text)} characters")
-        
-        # Extract which traits were actually assessed in the candidate's report
-        assessed_traits = extract_assessed_traits(candidate_text)
-        print(f"\nTraits found in candidate's report: {assessed_traits}")
-        print("-"*80 + "\n")
-        
-        # Generate AI matching analysis with awareness of what was actually tested
-        matching_analysis = generate_matching_analysis_from_traits(
-            candidate_text, 
-            job_requirements, 
-            assessed_traits
-        )
-        
-        print("\nMATCHING ANALYSIS COMPLETE")
-        print("="*80 + "\n")
-        
-        return jsonify(matching_analysis)
-        
-    except Exception as e:
-        print(f"Error in match-candidate: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
-
-
 def extract_assessed_traits(candidate_text):
     """Extract list of traits that were actually assessed in the candidate's report"""
     
