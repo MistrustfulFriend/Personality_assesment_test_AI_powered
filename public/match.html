@@ -465,6 +465,79 @@ body {
   animation: fadeIn 0.3s ease;
 }
 
+/* Collapsible quick styles (instant hide/show) */
+  .collapsible-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 6px 0;
+  }
+  .collapsible-content { display: none; } /* default hidden; we will show the first step content via JS */
+  .collapsible-open .collapsible-content { display: block; }
+  .no-emoji { /* helper, nothing here — ensures we don't accidentally add emoji */ }
+  /* spinner and loading inherited from main css */
+
+  /* Upload zone styles */
+  .upload-zone {
+    border: 2px dashed hsl(var(--border));
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-2xl);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: hsl(var(--surface-elevated));
+    margin-top: var(--spacing-lg);
+  }
+  
+  .upload-zone:hover {
+    border-color: hsl(var(--primary));
+    background: hsl(var(--primary) / 0.05);
+  }
+  
+  .upload-zone.dragging {
+    border-color: hsl(var(--primary));
+    background: hsl(var(--primary) / 0.1);
+    transform: scale(1.02);
+  }
+  
+  .upload-zone.has-file {
+    border-color: hsl(var(--success));
+    background: hsl(var(--success) / 0.05);
+  }
+  
+  .upload-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto var(--spacing-md);
+    background: hsl(var(--primary) / 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .upload-icon::before {
+    content: '↑';
+    font-size: 32px;
+    color: hsl(var(--primary));
+    font-weight: bold;
+  }
+  
+  .upload-zone h3 {
+    color: hsl(var(--text-primary));
+    margin-bottom: var(--spacing-sm);
+    font-size: 18px;
+  }
+  
+  .file-name {
+    margin-top: var(--spacing-md);
+    color: hsl(var(--success));
+    font-weight: 600;
+    font-size: 14px;
+  }
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
