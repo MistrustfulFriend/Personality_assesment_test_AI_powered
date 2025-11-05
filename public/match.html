@@ -38,7 +38,160 @@
       color: hsl(var(--primary));
       margin-top: 10px;
     }
-    
+
+    .trait-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .trait-selector-card {
+      background: hsl(var(--card-bg));
+      border: 2px solid hsl(var(--border));
+      border-radius: 8px;
+      padding: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .trait-selector-card:hover:not(.disabled) {
+      border-color: hsl(var(--primary));
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .trait-selector-card.selected {
+      border-color: hsl(var(--primary));
+      background: hsl(var(--primary) / 0.1);
+    }
+
+    .trait-selector-card.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      background: hsl(var(--border) / 0.1);
+    }
+
+    .trait-selector-card.disabled:after {
+      content: "Opposite trait selected";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: hsl(var(--danger));
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .trait-name-selector {
+      font-weight: 600;
+      font-size: 16px;
+      color: hsl(var(--primary));
+      margin-bottom: 8px;
+    }
+
+    .trait-description-selector {
+      font-size: 13px;
+      color: hsl(var(--text-secondary));
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .trait-level-selector {
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+    }
+
+    .level-btn {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid hsl(var(--border));
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .level-btn:hover {
+      border-color: hsl(var(--primary));
+    }
+
+    .level-btn.active {
+      background: hsl(var(--primary));
+      color: white;
+      border-color: hsl(var(--primary));
+    }
+
+    .level-btn.low.active {
+      background: #fbbf24;
+      border-color: #fbbf24;
+    }
+
+    .level-btn.medium.active {
+      background: #60a5fa;
+      border-color: #60a5fa;
+    }
+
+    .level-btn.high.active {
+      background: #34d399;
+      border-color: #34d399;
+    }
+
+    .selected-traits-summary {
+      background: hsl(var(--primary) / 0.1);
+      border: 2px solid hsl(var(--primary));
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .selected-trait-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      border: 1px solid hsl(var(--border));
+      border-radius: 20px;
+      padding: 8px 15px;
+      margin: 5px;
+      font-size: 13px;
+    }
+
+    .selected-trait-chip .level-indicator {
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: bold;
+      color: white;
+    }
+
+    .selected-trait-chip .level-indicator.low {
+      background: #fbbf24;
+    }
+
+    .selected-trait-chip .level-indicator.medium {
+      background: #60a5fa;
+    }
+
+    .selected-trait-chip .level-indicator.high {
+      background: #34d399;
+    }
+
+    .selected-trait-chip .remove-btn {
+      cursor: pointer;
+      color: hsl(var(--danger));
+      font-weight: bold;
+      margin-left: 5px;
+    }
+
     .match-results {
       margin-top: 30px;
     }
@@ -181,21 +334,35 @@
       border: 2px solid hsl(var(--danger));
       color: hsl(var(--danger));
     }
+
+    .search-box {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border: 2px solid hsl(var(--border));
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .search-box:focus {
+      outline: none;
+      border-color: hsl(var(--primary));
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <h1>🎯 Candidate-Job Matching</h1>
-      <p>Upload a candidate's personality report and job requirements to analyze fit</p>
+      <p>Upload a candidate's personality report and define the ideal trait profile for the role</p>
       <a href="/" style="color: hsl(var(--primary)); text-decoration: none;">← Back to Assessment</a>
     </header>
 
+    <!-- Step 1: Upload Candidate Report -->
     <div class="card">
-      <h2>Upload Documents</h2>
-      <p style="color: hsl(var(--text-secondary)); margin-bottom: 30px;">
-        Both files must be in PDF format. The candidate report should be generated from this assessment tool, 
-        and the job requirements should detail the role's personality and behavioral expectations.
+      <h2>Step 1: Upload Candidate's Personality Report</h2>
+      <p style="color: hsl(var(--text-secondary)); margin-bottom: 20px;">
+        Upload the PDF report generated from this assessment tool.
       </p>
 
       <div class="upload-zone" id="candidateUpload">
@@ -205,14 +372,24 @@
         <input type="file" id="candidateFile" accept=".pdf" style="display: none;">
         <div class="file-name" id="candidateFileName"></div>
       </div>
+    </div>
 
-      <div class="upload-zone" id="jobUpload">
-        <div class="upload-icon">📋</div>
-        <h3>Job Requirements Document</h3>
-        <p style="color: hsl(var(--text-secondary));">Click to upload or drag & drop</p>
-        <input type="file" id="jobFile" accept=".pdf" style="display: none;">
-        <div class="file-name" id="jobFileName"></div>
+    <!-- Step 2: Define Job Requirements -->
+    <div class="card" id="traitSelectionCard" style="display: none;">
+      <h2>Step 2: Define Ideal Trait Profile for the Role</h2>
+      <p style="color: hsl(var(--text-secondary)); margin-bottom: 20px;">
+        Select the personality traits that are most important for this role and specify the desired level (Low, Medium, or High). 
+        You can select up to 15 traits. Once a trait is selected, its opposite cannot be chosen.
+      </p>
+
+      <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search traits...">
+
+      <div id="selectedTraitsSummary" class="selected-traits-summary" style="display: none;">
+        <h3 style="margin-top: 0;">Selected Traits (<span id="selectedCount">0</span>/15)</h3>
+        <div id="selectedTraitsChips"></div>
       </div>
+
+      <div class="trait-selector-grid" id="traitSelectorGrid"></div>
 
       <button id="analyzeBtn" class="btn btn-primary" disabled style="width: 100%; margin-top: 20px;">
         Analyze Candidate Fit
@@ -222,9 +399,78 @@
     <div id="results" class="match-results"></div>
   </div>
 
+  <script src="trait-data.js"></script>
   <script>
     let candidateFile = null;
-    let jobFile = null;
+    let selectedJobTraits = {}; // { traitKey: { level: 'low'|'medium'|'high', name: string, description: string } }
+
+    // Trait pairs mapping - when one is selected, disable its opposite
+    const traitPairs = {
+      'Analytical Thinking': 'Intuitive Thinking',
+      'Intuitive Thinking': 'Analytical Thinking',
+      'Risk-Taking': 'Risk Aversion',
+      'Risk Aversion': 'Risk-Taking',
+      'Collaboration': 'Independent Work',
+      'Independent Work': 'Collaboration',
+      'Detail Orientation': 'Big Picture Thinking',
+      'Big Picture Thinking': 'Detail Orientation',
+      'Adaptability': 'Consistency',
+      'Consistency': 'Adaptability',
+      'Proactivity': 'Reactivity',
+      'Reactivity': 'Proactivity',
+      'Empathy': 'Task Focus',
+      'Task Focus': 'Empathy',
+      'Innovation': 'Process Adherence',
+      'Process Adherence': 'Innovation',
+      'Decisiveness': 'Deliberation',
+      'Deliberation': 'Decisiveness',
+      'Assertiveness': 'Diplomacy',
+      'Diplomacy': 'Assertiveness',
+      'Optimism': 'Realism',
+      'Realism': 'Optimism',
+      'Structured': 'Flexible',
+      'Flexible': 'Structured',
+      'Results-Oriented': 'Process-Oriented',
+      'Process-Oriented': 'Results-Oriented',
+      'Competitive': 'Cooperative',
+      'Cooperative': 'Competitive',
+      'Confidence': 'Humility',
+      'Humility': 'Confidence'
+    };
+
+    // Trait descriptions for each trait
+    const traitDescriptions = {
+      'Analytical Thinking': 'Makes decisions based on data, logic, and systematic analysis. Values evidence and rational processes.',
+      'Intuitive Thinking': 'Relies on instinct, gut feelings, and pattern recognition. Trusts experience-based insights.',
+      'Risk-Taking': 'Comfortable with uncertainty and willing to try unconventional approaches. Embraces bold initiatives.',
+      'Risk Aversion': 'Prefers proven methods and careful planning. Values stability and predictability.',
+      'Collaboration': 'Thrives in team settings and values group input. Builds consensus and shares responsibility.',
+      'Independent Work': 'Prefers autonomy and self-directed tasks. Works best with minimal oversight.',
+      'Detail Orientation': 'Focuses on precision, accuracy, and thorough execution. Notices small but important elements.',
+      'Big Picture Thinking': 'Focuses on strategy, vision, and overall objectives. Sees connections between different elements.',
+      'Adaptability': 'Flexible and comfortable with change. Adjusts quickly to new situations and requirements.',
+      'Consistency': 'Values reliability and predictable approaches. Maintains stable methods and routines.',
+      'Proactivity': 'Takes initiative and anticipates needs. Acts without waiting for direction.',
+      'Reactivity': 'Responds thoughtfully to situations as they arise. Prefers to assess before acting.',
+      'Empathy': 'Prioritizes understanding others\' feelings and perspectives. Values emotional intelligence.',
+      'Task Focus': 'Prioritizes objectives and deliverables. Maintains focus on outcomes over relationships.',
+      'Innovation': 'Seeks new solutions and creative approaches. Questions conventional methods.',
+      'Process Adherence': 'Follows established procedures and best practices. Values systematic approaches.',
+      'Decisiveness': 'Makes quick, firm decisions with available information. Acts with confidence.',
+      'Deliberation': 'Takes time to consider multiple perspectives before deciding. Values thorough analysis.',
+      'Assertiveness': 'Direct and firm in communication. Advocates strongly for positions and needs.',
+      'Diplomacy': 'Tactful and consensus-oriented in communication. Considers impact on relationships.',
+      'Optimism': 'Focuses on possibilities and positive outcomes. Maintains hopeful perspective.',
+      'Realism': 'Focuses on practical constraints and likely outcomes. Maintains balanced perspective.',
+      'Structured': 'Prefers organized, planned approaches. Values clear frameworks and schedules.',
+      'Flexible': 'Comfortable with spontaneity and fluid situations. Adapts plans as needed.',
+      'Results-Oriented': 'Focuses on outcomes and achievement. Measures success by deliverables.',
+      'Process-Oriented': 'Focuses on methods and quality of execution. Values how work is done.',
+      'Competitive': 'Motivated by winning and outperforming others. Thrives on comparison.',
+      'Cooperative': 'Motivated by mutual success and collective achievement. Thrives on collaboration.',
+      'Confidence': 'Self-assured and willing to take charge. Comfortable with visibility and leadership.',
+      'Humility': 'Values learning and acknowledges limitations. Comfortable sharing credit.'
+    };
 
     // Candidate file upload
     const candidateUpload = document.getElementById('candidateUpload');
@@ -239,31 +485,129 @@
         candidateFile = file;
         candidateFileName.textContent = `✓ ${file.name}`;
         candidateUpload.classList.add('has-file');
-        checkBothFilesUploaded();
+        document.getElementById('traitSelectionCard').style.display = 'block';
+        renderTraitSelector();
       }
     };
 
-    // Job file upload
-    const jobUpload = document.getElementById('jobUpload');
-    const jobInput = document.getElementById('jobFile');
-    const jobFileName = document.getElementById('jobFileName');
+    function renderTraitSelector() {
+      const grid = document.getElementById('traitSelectorGrid');
+      grid.innerHTML = '';
 
-    jobUpload.onclick = () => jobInput.click();
-    
-    jobInput.onchange = (e) => {
-      const file = e.target.files[0];
-      if (file && file.type === 'application/pdf') {
-        jobFile = file;
-        jobFileName.textContent = `✓ ${file.name}`;
-        jobUpload.classList.add('has-file');
-        checkBothFilesUploaded();
-      }
-    };
+      // Get all unique traits
+      const allTraits = Object.keys(traitDescriptions).sort();
 
-    function checkBothFilesUploaded() {
-      const analyzeBtn = document.getElementById('analyzeBtn');
-      analyzeBtn.disabled = !(candidateFile && jobFile);
+      allTraits.forEach(traitName => {
+        const isSelected = selectedJobTraits[traitName] !== undefined;
+        const oppositeTraitName = traitPairs[traitName];
+        const isOppositeSelected = selectedJobTraits[oppositeTraitName] !== undefined;
+        const isDisabled = isOppositeSelected && !isSelected;
+
+        const card = document.createElement('div');
+        card.className = 'trait-selector-card';
+        if (isSelected) card.classList.add('selected');
+        if (isDisabled) card.classList.add('disabled');
+
+        card.innerHTML = `
+          <div class="trait-name-selector">${traitName}</div>
+          <div class="trait-description-selector">${traitDescriptions[traitName]}</div>
+          ${!isDisabled ? `
+            <div class="trait-level-selector">
+              <button class="level-btn low ${isSelected && selectedJobTraits[traitName].level === 'low' ? 'active' : ''}" data-level="low">Low</button>
+              <button class="level-btn medium ${isSelected && selectedJobTraits[traitName].level === 'medium' ? 'active' : ''}" data-level="medium">Medium</button>
+              <button class="level-btn high ${isSelected && selectedJobTraits[traitName].level === 'high' ? 'active' : ''}" data-level="high">High</button>
+            </div>
+          ` : ''}
+        `;
+
+        if (!isDisabled) {
+          const levelButtons = card.querySelectorAll('.level-btn');
+          levelButtons.forEach(btn => {
+            btn.onclick = (e) => {
+              e.stopPropagation();
+              const level = btn.dataset.level;
+              
+              // If clicking the same level, deselect
+              if (isSelected && selectedJobTraits[traitName].level === level) {
+                delete selectedJobTraits[traitName];
+              } else {
+                // Add or update selection
+                selectedJobTraits[traitName] = {
+                  level: level,
+                  name: traitName,
+                  description: traitDescriptions[traitName]
+                };
+              }
+              
+              renderTraitSelector();
+              updateSelectedSummary();
+              updateAnalyzeButton();
+            };
+          });
+        }
+
+        grid.appendChild(card);
+      });
     }
+
+    function updateSelectedSummary() {
+      const summaryDiv = document.getElementById('selectedTraitsSummary');
+      const chipsDiv = document.getElementById('selectedTraitsChips');
+      const countSpan = document.getElementById('selectedCount');
+      
+      const selectedCount = Object.keys(selectedJobTraits).length;
+      countSpan.textContent = selectedCount;
+
+      if (selectedCount === 0) {
+        summaryDiv.style.display = 'none';
+        return;
+      }
+
+      summaryDiv.style.display = 'block';
+      chipsDiv.innerHTML = '';
+
+      Object.entries(selectedJobTraits).forEach(([traitName, data]) => {
+        const chip = document.createElement('div');
+        chip.className = 'selected-trait-chip';
+        chip.innerHTML = `
+          <span>${traitName}</span>
+          <span class="level-indicator ${data.level}">${data.level.toUpperCase()}</span>
+          <span class="remove-btn" data-trait="${traitName}">✕</span>
+        `;
+
+        chip.querySelector('.remove-btn').onclick = () => {
+          delete selectedJobTraits[traitName];
+          renderTraitSelector();
+          updateSelectedSummary();
+          updateAnalyzeButton();
+        };
+
+        chipsDiv.appendChild(chip);
+      });
+    }
+
+    function updateAnalyzeButton() {
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      const selectedCount = Object.keys(selectedJobTraits).length;
+      analyzeBtn.disabled = selectedCount === 0 || !candidateFile;
+    }
+
+    // Search functionality
+    document.getElementById('searchBox').oninput = (e) => {
+      const searchTerm = e.target.value.toLowerCase();
+      const cards = document.querySelectorAll('.trait-selector-card');
+      
+      cards.forEach(card => {
+        const traitName = card.querySelector('.trait-name-selector').textContent.toLowerCase();
+        const traitDesc = card.querySelector('.trait-description-selector').textContent.toLowerCase();
+        
+        if (traitName.includes(searchTerm) || traitDesc.includes(searchTerm)) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    };
 
     // Analyze button
     document.getElementById('analyzeBtn').onclick = async () => {
@@ -272,7 +616,7 @@
 
       const formData = new FormData();
       formData.append('candidate_report', candidateFile);
-      formData.append('job_requirements', jobFile);
+      formData.append('job_requirements', JSON.stringify(selectedJobTraits));
 
       try {
         const response = await fetch('/api/match-candidate', {
@@ -303,13 +647,11 @@
     function displayResults(data) {
       const resultsDiv = document.getElementById('results');
       
-      // Determine fit level styling
       const fitScore = data.overall_fit_score || 3;
       let fitClass = 'medium';
       if (fitScore >= 4.5) fitClass = 'high';
       else if (fitScore <= 2.5) fitClass = 'low';
 
-      // Determine recommendation styling
       let recClass = 'recommend';
       const recText = data.hiring_recommendation || '';
       if (recText.includes('Strongly Recommend')) recClass = 'strongly-recommend';
@@ -336,31 +678,34 @@
         </div>
 
         <div class="card">
-          <h2>Dimensional Fit Analysis</h2>
+          <h2>Trait-by-Trait Fit Analysis</h2>
           <div class="dimension-grid">
       `;
 
-      // Dimensional scores
-      const dimensions = data.dimensional_scores || {};
-      for (const [key, value] of Object.entries(dimensions)) {
-        const score = value.score || 3;
+      // Trait-specific scores
+      const traitScores = data.trait_scores || {};
+      for (const [traitName, traitData] of Object.entries(traitScores)) {
+        const score = traitData.score || 3;
         let scoreClass = 'medium';
         if (score >= 4) scoreClass = 'high';
         else if (score <= 2) scoreClass = 'low';
 
-        const dimName = key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        const required = selectedJobTraits[traitName];
         
         html += `
           <div class="dimension-card">
             <div class="dimension-score">
-              <span class="dimension-name">${dimName}</span>
+              <span class="dimension-name">${traitName}</span>
               <span class="score-badge ${scoreClass}">${score}/5</span>
             </div>
+            <p style="font-size: 12px; color: hsl(var(--text-tertiary)); margin: 5px 0;">
+              Required: <strong>${required ? required.level.toUpperCase() : 'N/A'}</strong>
+            </p>
             <div class="likert-bar">
               <div class="likert-fill" style="width: ${(score/5)*100}%"></div>
             </div>
             <p style="font-size: 14px; color: hsl(var(--text-secondary)); margin-top: 10px;">
-              ${value.justification || ''}
+              ${traitData.analysis || ''}
             </p>
           </div>
         `;
@@ -385,7 +730,7 @@
         </div>
 
         <div class="card">
-          <h2>Specific Evidence from Reports</h2>
+          <h2>Specific Evidence from Report</h2>
           <ul class="evidence-list">
             ${(data.specific_evidence || []).map(e => `<li>${e}</li>`).join('')}
           </ul>
